@@ -54,19 +54,33 @@ def load_suite(suite: str, seed: int):
     return _load(DEV_TASKS, seed), _load(TEST_TASKS, seed)
 
 
-def evaluate(state, tasks, seed, adapter=ADAPTER) -> dict[str, float]:
+def evaluate(state, tasks, seed, adapter=ADAPTER, alpha: int = 32,
+             split: str = "test") -> dict[str, float]:
+    """alpha must match the value the adapter was TRAINED with — LoRA's contribution is
+    scaled by alpha/r at inference, so evaluating an alpha-128 adapter as if it were alpha-32
+    silently quarters its effect.
+
+    split="val" scores each task's validation rows; split="test" scores its held-out rows.
+    Anything inside a search loop must use "val". Feeding a task's test rows back to the
+    agent, even for a DEV task, is optimising against the thing we then report — the leak is
+    subtle because the DEV/TEST split is across *tasks*, which makes it easy to forget that
+    each task has its own internal split too.
+    """
     scores = {}
     for t in tasks:
-        m = pt.LoRATabICL(state, seed=seed, adapter=adapter).fit(t.X_ctx.to_numpy(), t.y_ctx)
-        p = m.predict_proba(t.X_test.to_numpy())
+        X_eval = t.X_val if split == "val" else t.X_test
+        y_eval = t.y_val if split == "val" else t.y_test
+        m = pt.LoRATabICL(state, seed=seed, adapter=adapter, alpha=alpha).fit(
+            t.X_ctx.to_numpy(), t.y_ctx)
+        p = m.predict_proba(X_eval.to_numpy())
         present = np.unique(t.y_ctx)
         if t.n_classes == 2 and p.shape[1] == 2:
-            a = roc_auc_score(t.y_test, p[:, 1])
+            a = roc_auc_score(y_eval, p[:, 1])
         else:
-            P = np.zeros((len(t.X_test), t.n_classes))
+            P = np.zeros((len(X_eval), t.n_classes))
             P[:, present.astype(int)] = p[:, : len(present)]
             P = P / P.sum(1, keepdims=True).clip(1e-9)
-            a = roc_auc_score(t.y_test, P, multi_class="ovr", average="macro",
+            a = roc_auc_score(y_eval, P, multi_class="ovr", average="macro",
                               labels=list(range(t.n_classes)))
         scores[t.name] = float(a)
     return scores

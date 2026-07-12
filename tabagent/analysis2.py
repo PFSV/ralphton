@@ -176,8 +176,16 @@ def sample_prior_meta(cfg: dict, n: int = 40, seed: int = 0) -> pd.DataFrame:
 
 
 def real_meta(seed: int = 0) -> pd.DataFrame:
-    """Real TabArena tables, described exactly as the prior samples are."""
+    """Real TabArena tables, described exactly as the prior samples are.
+
+    Cached: this runs cross-validated logistic + tree fits on all 36 tables, which costs
+    minutes of CPU, and it is a pure function of the seed. Every agent round was paying for
+    it again."""
     import tabarena
+    f = HERE / "cache" / f"real_meta_{seed}.parquet"
+    if f.exists():
+        return pd.read_parquet(f)
+
     dev, test = tabarena.load_split(seed)
     rows = []
     for t in dev + test:
@@ -186,7 +194,10 @@ def real_meta(seed: int = 0) -> pd.DataFrame:
         r = meta(X, y)
         r["name"] = t.name
         rows.append(r)
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(f)
+    return df
 
 
 def report(cfg: dict, label: str, real: pd.DataFrame, n: int = 40, seed: int = 0) -> dict:

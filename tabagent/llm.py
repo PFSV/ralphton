@@ -1,5 +1,13 @@
-"""LLM backend. Talks to the local `claude` CLI directly, or over HTTP when the
-experiment is running on the GPU box (see llm_server.py + the SSH reverse tunnel).
+"""LLM backend, in order of preference:
+
+  1. OpenAI, called straight from the GPU box, if a key is on disk. This is the one that
+     works unattended: no SSH reverse tunnel to drop, and calls can go in parallel.
+  2. The tunnel back to the laptop's `claude` CLI (llm_server.py). Fine, but every time the
+     SSH session died it silently returned empty strings and burned a whole round.
+  3. The local `claude` CLI, when running on the laptop.
+
+Every response is cached on disk by hash(model, prompt), so a rerun costs nothing and a
+crashed run resumes exactly where it stopped.
 """
 from __future__ import annotations
 
@@ -17,6 +25,41 @@ CACHE.mkdir(parents=True, exist_ok=True)
 MODEL = os.environ.get("TABAGENT_LLM", "claude-opus-4-8")
 URL = os.environ.get("TABAGENT_LLM_URL")  # set on the server -> use the tunnel
 _CALLS = {"n": 0, "cached": 0}
+
+OPENAI_MODEL = os.environ.get("TABAGENT_OPENAI_MODEL", "gpt-4.1")
+_ENV_PATHS = [Path.home() / "ralphton" / ".env", Path(__file__).parent / ".env"]
+
+
+def _openai_key() -> str | None:
+    k = os.environ.get("OPENAI_API_KEY")
+    if k:
+        return k.strip()
+    for p in _ENV_PATHS:
+        if not p.exists():
+            continue
+        for line in p.read_text().splitlines():
+            if "openai_api_key" in line.lower() and "=" in line:
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return None
+
+
+KEY = _openai_key()
+
+
+def _via_openai(prompt: str) -> str:
+    body = json.dumps({
+        "model": OPENAI_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions", data=body,
+        headers={"content-type": "application/json",
+                 "authorization": f"Bearer {KEY}"},
+    )
+    with urllib.request.urlopen(req, timeout=240) as r:
+        d = json.loads(r.read())
+    return d["choices"][0]["message"]["content"].strip()
 
 
 def n_calls() -> int:
@@ -44,19 +87,29 @@ def _via_cli(prompt: str) -> str:
     return out.stdout.strip()
 
 
+def backend() -> str:
+    return "openai" if KEY else ("tunnel" if URL else "claude-cli")
+
+
 def ask(prompt: str) -> str:
-    key = hashlib.sha256(f"{MODEL}\x00{prompt}".encode()).hexdigest()[:32]
-    f = CACHE / f"{key}.json"
+    tag = OPENAI_MODEL if KEY else MODEL
+    h = hashlib.sha256(f"{tag}\x00{prompt}".encode()).hexdigest()[:32]
+    f = CACHE / f"{h}.json"
     if f.exists():
         _CALLS["cached"] += 1
         return json.loads(f.read_text())["response"]
     try:
-        txt = _via_http(prompt) if URL else _via_cli(prompt)
+        if KEY:
+            txt = _via_openai(prompt)
+        elif URL:
+            txt = _via_http(prompt)
+        else:
+            txt = _via_cli(prompt)
     except Exception:
         txt = ""
     if txt:
         _CALLS["n"] += 1
-        f.write_text(json.dumps({"prompt": prompt, "response": txt}))
+        f.write_text(json.dumps({"model": tag, "prompt": prompt, "response": txt}))
     return txt
 
 

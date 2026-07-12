@@ -210,8 +210,8 @@ def load_backbone(seed: int = 0):
 
 
 def train_lora(clf, cfg: dict, steps: int = 200, batch_size: int = 4,
-               lr: float = 1e-4, r: int = 16, seed: int = 0, log_every: int = 50,
-               adapter: str = "lora"):
+               lr: float = 1e-4, r: int = 16, alpha: int = 32, seed: int = 0,
+               log_every: int = 50, adapter: str = "lora"):
     """adapter='lora' trains 2.1% of the model; adapter='full' unfreezes everything.
 
     Full fine-tuning is the honest control: if adaptation only ever hurts, we need to know
@@ -223,7 +223,7 @@ def train_lora(clf, cfg: dict, steps: int = 200, batch_size: int = 4,
     torch.manual_seed(seed)
     model = clf.model_
     if adapter == "lora":
-        params = inject_lora(model, r=r)
+        params = inject_lora(model, r=r, alpha=alpha)
     else:
         for p in model.parameters():
             p.requires_grad_(True)

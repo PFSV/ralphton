@@ -28,3 +28,7 @@ paper/audit.tex
 paper/fig_search.pdf
 paper/main.pdf
 paper/icml2025/
+
+# API keys — the repo is public
+.env
+.env.*
