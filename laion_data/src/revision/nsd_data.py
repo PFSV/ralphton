@@ -166,8 +166,10 @@ def _load_session_zscored(subj: str, sess: int) -> np.ndarray:
     arrs = []
     for hemi in ("lh", "rh"):
         p = C.NSD_DIR / rel / f"{hemi}.betas_session{sess:02d}.mgh"
-        arrs.append(nb.load(str(p)).get_fdata().squeeze())
-    verts = np.vstack(arrs)  # (327684, n_trials)
+        # float32, not the float64 that get_fdata() defaults to: the .mgh payload is int16,
+        # and float64 would cost 2 GB per session for no precision we can use.
+        arrs.append(np.asarray(nb.load(str(p)).dataobj, dtype=np.float32).squeeze())
+    verts = np.vstack(arrs)  # (n_vertices, n_trials)
 
     # z-score across trials (axis=-1), per vertex, WITHIN this session.
     # SOURCE: nsd_get_data_light.py:186 `zscore(all_verts, axis=cond_axis)` with cond_axis=-1
@@ -175,7 +177,13 @@ def _load_session_zscored(subj: str, sess: int) -> np.ndarray:
     sd = verts.std(axis=-1, keepdims=True)
     with np.errstate(invalid="ignore", divide="ignore"):
         z = (verts - mu) / sd  # sd==0 -> NaN/inf, exactly as scipy.stats.zscore does
-    return z.astype(np.float32)
+
+    # Return TRIAL-major, (n_trials, n_vertices). The z-score is still computed over the
+    # trial axis per vertex; only the memory layout changes. This matters: the accumulator
+    # is scattered into by trial, and a (n_images, n_vertices) accumulator makes every
+    # scatter a contiguous row write instead of a 40 KB-strided column write into a 13 GB
+    # array. Same arithmetic, ~20x faster.
+    return np.ascontiguousarray(z.T, dtype=np.float32)
 
 
 def build_betas(subj: str, keep_raw: bool = False) -> Path:
@@ -197,20 +205,31 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
     col_of = -np.ones(trial_conditions.max() + 1, dtype=np.int64)
     col_of[keep] = np.arange(n_keep)
 
-    acc = np.zeros((C.N_VERTICES_FSAVERAGE, n_keep), dtype=np.float32)
+    acc = np.zeros((n_keep, C.N_VERTICES_FSAVERAGE), dtype=np.float32)
     cnt = np.zeros(n_keep, dtype=np.int32)
 
     n_sess = C.N_SESSIONS[subj]
     trials_per_session = len(trial_conditions) // n_sess
     for sess in range(1, n_sess + 1):
-        z = _load_session_zscored(subj, sess)
+        z = _load_session_zscored(subj, sess)  # (n_trials, n_vertices)
         lo = (sess - 1) * trials_per_session
-        sess_conditions = trial_conditions[lo : lo + z.shape[1]]
-        cols = col_of[sess_conditions]
-        valid = cols >= 0
-        np.add.at(acc.T, cols[valid], z[:, valid].T)
-        np.add.at(cnt, cols[valid], 1)
-        del z
+        sess_conditions = trial_conditions[lo : lo + z.shape[0]]
+        rows = col_of[sess_conditions]
+        valid = rows >= 0
+        rows = rows[valid]
+        z = z[valid]
+
+        # Scatter-add z's trials into `acc` at `rows`. A condition can recur within a
+        # session, so this is an accumulation, not an assignment -- but `np.add.at` is
+        # ~50x slower than a slice-add. Instead: sort by row, sum duplicate groups with
+        # `reduceat`, then add the (now unique) groups in one vectorised slice-add.
+        order = np.argsort(rows, kind="stable")
+        rows_sorted = rows[order]
+        uniq, starts, counts = np.unique(rows_sorted, return_index=True, return_counts=True)
+        summed = np.add.reduceat(z[order], starts, axis=0)
+        acc[uniq] += summed
+        cnt[uniq] += counts.astype(np.int32)
+        del z, summed
 
     assert (cnt == C.N_REPEATS).all(), (
         f"{subj}: expected every kept condition to have exactly {C.N_REPEATS} repeats, "
@@ -218,7 +237,7 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
     )
     acc /= C.N_REPEATS
 
-    np.save(out, acc.T.astype(np.float16))  # (n_images_3x, n_vertices)
+    np.save(out, acc.astype(np.float16))  # (n_images_3x, n_vertices)
     np.save(cond_out, keep)
     if not keep_raw:
         for sess in range(1, n_sess + 1):

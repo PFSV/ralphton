@@ -167,3 +167,36 @@ def test_c11_scrambled_caption_correlation():
     o, s = E.load("captions"), E.load("scrambled")
     rs = np.array([rsa.model_vs_model(o, s, subj) for subj in C.SUBJECTS])
     assert rs.mean() == pytest.approx(C.SCRAMBLE_TARGET_R, abs=0.015)
+
+
+# --------------------------------------------------------------------------------------
+# M10 -- the ridge core
+# --------------------------------------------------------------------------------------
+def test_frac_grid_is_the_code_grid_not_the_paper_grid():
+    """The paper says 0.05..1.00 step 0.05. The release computes
+    np.linspace(1/20, 1+1/20, 20) = 0.05..1.05, step 0.05263 -- the top fraction exceeds
+    OLS. SOURCE: nsd_llm_encoding_model.py:25-26."""
+    from src.revision.ridge import FRACS
+
+    assert len(FRACS) == 20
+    assert FRACS[0] == pytest.approx(0.05)
+    assert FRACS[-1] == pytest.approx(1.05)
+    assert FRACS[-1] > 1.0
+
+
+def test_shared_frac_matches_gridsearchcv():
+    """MI-17: the release selects ONE shared fraction for the whole model via
+    r2_score(multioutput='uniform_average'), not one per voxel. Our chunked, fraction-
+    vectorised reimplementation must return exactly what FracRidgeRegressorCV returns, or
+    the tractability shortcut is not faithful."""
+    from fracridge import FracRidgeRegressorCV
+
+    from src.revision.ridge import FRACS, select_frac
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(300, 40))
+    Y = X @ rng.normal(size=(40, 60)) + rng.normal(size=(300, 60)) * 3.0
+
+    mine, _ = select_frac(X, Y, chunk=17)  # chunk < n_targets, to exercise chunking
+    ref = FracRidgeRegressorCV(jit=True, fit_intercept=True).fit(X, Y, frac_grid=FRACS)
+    assert mine == pytest.approx(float(ref.best_frac_))
