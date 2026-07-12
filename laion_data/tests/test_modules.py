@@ -200,3 +200,20 @@ def test_shared_frac_matches_gridsearchcv():
     mine, _ = select_frac(X, Y, chunk=17)  # chunk < n_targets, to exercise chunking
     ref = FracRidgeRegressorCV(jit=True, fit_intercept=True).fit(X, Y, frac_grid=FRACS)
     assert mine == pytest.approx(float(ref.best_frac_))
+
+
+def test_sessions_are_750_trials_and_row_ordered():
+    """M1 slices each session's betas out of `responses.tsv` positionally
+    (`trial_conditions[lo : lo + n]`). That is only correct if the rows are sorted by
+    SESSION and every session has exactly 750 trials. If NSD ever violated this, the betas
+    would be silently misaligned to the wrong stimuli and every downstream number would be
+    wrong-but-plausible. Pin it."""
+    import pandas as pd
+
+    for subj in C.SUBJECTS:
+        df = pd.read_csv(
+            C.NSD_DIR / "nsddata" / "ppdata" / subj / "behav" / "responses.tsv", sep="\t"
+        )
+        df = df[df["SESSION"] <= C.N_SESSIONS[subj]]
+        assert df["SESSION"].is_monotonic_increasing
+        assert set(df.groupby("SESSION").size().unique()) == {750}
