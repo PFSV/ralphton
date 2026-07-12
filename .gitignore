@@ -1,0 +1,11 @@
+# secrets
+.env
+.env.*
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# data (large / DUA-gated)
+laion_data/
