@@ -7,5 +7,11 @@
 __pycache__/
 *.pyc
 
-# data (large / DUA-gated)
-laion_data/
+# re:vision — track code, reports and docs; exclude data, vendored repos and logs.
+# NSD betas are DUA-gated and ~315 GB; COCO/derivatives are regenerable from src/.
+laion_data/data/
+laion_data/logs/
+laion_data/.laion_fmri/
+laion_data/code/visuo_llm/
+laion_data/code/blt_mpnet/
+laion_data/revision_llm_brain/
