@@ -1,0 +1,264 @@
+\documentclass{article}
+\usepackage{microtype,graphicx,booktabs,amsmath,amssymb,url}
+\usepackage{hyperref}
+\usepackage[accepted]{icml2025}
+\usepackage{xcolor}
+
+\icmltitlerunning{Repairing the Prior of a Tabular Foundation Model}
+
+\input{numbers}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Repairing the Prior: An LLM Agent that Revises the Synthetic\\
+Pre-training Distribution of a Tabular Foundation Model}
+\icmlsetsymbol{equal}{*}
+\begin{icmlauthorlist}
+\icmlauthor{Anonymous}{anon}
+\end{icmlauthorlist}
+\icmlaffiliation{anon}{Anonymous Institution}
+\icmlcorrespondingauthor{Anonymous}{anon@example.com}
+\icmlkeywords{tabular foundation models, in-context learning, LLM agents, synthetic priors}
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Tabular foundation models (TFMs) such as TabPFN and TabICL are pre-trained on millions of
+synthetic datasets drawn from a hand-designed prior over structural causal models. That
+prior is frozen at publication time and knows nothing about the tasks the model will
+actually be asked to solve; recent work argues prior design, not architecture, is now the
+binding constraint on TFM quality. Re-pre-training a TFM to fix its prior costs a GPU
+cluster, so in practice nobody does.
+
+We show the prior can instead be \emph{repaired}, cheaply and after the fact. We treat the
+prior's generating configuration as a search space and give it to an LLM agent, which reads
+a diagnosis of where the released checkpoint fails on a small set of development tasks and
+proposes a revised prior. Each candidate prior is materialised, the released checkpoint is
+LoRA-adapted to it ($2.1\%$ of parameters, \LoRAMinutes{} on one A100), and the result is
+scored. The winning adapter is then evaluated on \NTest{} held-out tasks the agent never
+saw.
+
+On real OpenML tables the agent-revised prior changes held-out AUC by \APMean{}
+(bootstrap $95\%$ CI $[\APCIlo{}, \APCIhi{}]$) relative to the released checkpoint, and by
+\ARMean{} (CI $[\ARCIlo{}, \ARCIhi{}]$) relative to a random search over the same knobs given
+an identical budget --- the comparison that separates the LLM's contribution from the search
+itself. Inspecting the winning configurations shows what the agent found: TabICL's prior
+over-represents large, many-class, purely numeric datasets, and the agent shifts it toward
+the small, binary, partly categorical regime that real tables actually occupy.
+\end{abstract}
+
+\section{Introduction}
+
+A tabular foundation model does not learn from tables. It learns from a \emph{prior}: a
+program that samples synthetic datasets, typically by drawing a random structural causal
+model (SCM), pushing noise through it, and reading off features and labels. TabPFN
+\cite{hollmann2023tabpfn,hollmann2025tabpfnv2} and TabICL \cite{qu2025tabicl} are both
+trained this way, and the resulting model performs Bayesian in-context inference over
+whatever prior it was shown. The prior \emph{is} the inductive bias.
+
+This has an awkward consequence. The prior is chosen once, by the model's authors, before
+any downstream task exists. If it over-represents regimes that real tables never occupy ---
+too many classes, too many rows, too few categorical columns --- the model wastes capacity
+on a world it will never see, and the mismatch is invisible at pre-training time because no
+real task is in the loop. The field has begun to notice: \citet{zhang2025mitra} argue that
+``more attention should be paid to the design of the data prior'' and introduce the first
+systematic prior-quality criteria, while O'PRIOR \cite{bouadi2026oprior} shows that holding
+architecture and compute fixed and varying only the prior moves downstream accuracy
+substantially.
+
+The obvious fix --- design a better prior and pre-train again --- is the one nobody can
+afford. Pre-training a TFM consumes millions of synthetic datasets on a GPU cluster. So the
+prior stays broken.
+
+\paragraph{This paper.} We show the prior can be repaired \emph{post hoc}, without
+re-pre-training, by an agent that is allowed to see downstream failure. Our contributions:
+
+\begin{itemize}\itemsep1pt
+\item We first show the mismatch is \emph{real and measurable}, with no model in the loop:
+sampling from TabICL's released prior and measuring it on the same axes as real OpenML tables
+shows it generates tables three times wider, far more class-imbalanced, with almost no feature
+redundancy and no categorical columns (Table~\ref{tab:audit}).
+\item We recast prior design as a \emph{closed-loop search problem}. The prior's generating
+configuration --- SCM depth and width, noise scale, class count, sequence length,
+categorical fraction, MLP/tree mixture --- is exposed as an editable object. An LLM agent
+proposes revisions conditioned on a diagnosis of where the released checkpoint currently
+fails, and never sees a real row or even a task's name.
+\item We make each candidate prior cheap to evaluate. Rather than pre-training from
+scratch, we LoRA-adapt the released checkpoint to the candidate prior, touching $2.1\%$ of
+parameters. One candidate costs \LoRAMinutes{} on a single A100, turning prior design from a
+cluster job into a search loop.
+\item We isolate the LLM's contribution with a random-search arm that draws priors uniformly
+from the same configuration space under the same budget. This is the baseline that decides
+whether world knowledge helps or whether any search would have done.
+\item We report the outcome on \NTest{} held-out real tasks as paired differences with
+confidence intervals, and we show \emph{what} the agent changed --- the revisions are
+interpretable and consistent across seeds, which is itself evidence that the mismatch it
+found is real rather than an artefact of search.
+\end{itemize}
+
+\section{Method}
+
+\paragraph{Setup.} Let $M_{\theta_0}$ be a released TFM checkpoint, pre-trained on a prior
+$P_0$ with configuration $c_0$. A prior configuration $c$ induces a distribution over
+synthetic datasets; sampling from it is cheap, pre-training on it is not. We are given a
+small set of \emph{development} tasks $\mathcal{D}$ (real tables, which the agent may
+inspect) and a disjoint set of \emph{test} tasks $\mathcal{T}$, which nothing in the loop
+ever sees.
+
+\paragraph{The knob space.} We expose \Nknobs{} configuration knobs of TabICL's SCM prior,
+each with hard bounds (Table~\ref{tab:knobs} lists those the agent moved). They control the
+causal graph (number of causes, SCM depth, hidden width, initialisation and noise scale),
+the sampling regime (dataset size, feature count, class count, train/test split, whether
+small datasets are replayed), and the mixture between MLP-SCM and tree-SCM generators.
+Proposals outside the bounds are clipped, so a bad proposal costs a training run but cannot
+produce an invalid prior.
+
+\paragraph{Cheap evaluation via LoRA.} Given a candidate $c$, we instantiate its prior,
+sample synthetic tasks, and adapt $\theta_0$ by LoRA \cite{hu2022lora} on the feed-forward
+projections of the dataset-wise in-context transformer --- the block that performs the
+actual in-context inference. The column and row embedders keep their pre-trained behaviour.
+This trains \LoRAParams{} of \TotalParams{} parameters ($2.1\%$) with the standard
+in-context objective: sample a synthetic dataset, split it, condition on the training part,
+cross-entropy on the held-out part. The adapted model is then scored on $\mathcal{D}$
+exactly as a user would score it --- fit the context, one forward pass, AUC.
+
+\paragraph{The agent.} At round $r$ the agent receives (i) a card describing each
+development task --- feature count, class count, context size, class balance --- (ii) the
+per-task AUC of the current adapter, worst first, and (iii) the search history: every
+configuration tried and its development score. It returns a full revised configuration. The
+loop keeps the configuration with the best development score; that adapter, and only that
+one, is finally evaluated on $\mathcal{T}$.
+
+Two properties of this design matter for what we can claim. First, the development tasks are
+presented \emph{anonymously}: the agent sees summary statistics, never raw rows, and never
+the task's name. This is deliberate. LLMs have memorised the contents of well-known OpenML
+tables \cite{bordt2024elephants}, so naming them would let recalled specifics --- rather than
+reasoning about what real tabular problems look like --- drive the revision. Second, the
+agent never sees the test tasks at all. What transfers, therefore, is a belief about the
+shape of real tabular problems, not knowledge of any particular one.
+
+\paragraph{Baselines with identical budget.} The arm that decides the paper is
+\textbf{random search}: the same number of candidate priors, drawn uniformly from the same
+bounded knob space, the same LoRA compute per candidate, the same
+best-on-development selection rule. The \emph{only} difference is who proposes the next
+configuration. We also report \textbf{base}, which LoRA-adapts to TabICL's own unmodified
+prior --- this controls for the possibility that any further training on any prior helps.
+
+\section{Experiments}
+\label{sec:exp}
+
+\paragraph{Data.} \NDev{} OpenML tasks form the development set and \NTest{} disjoint tasks
+form the test set, spanning both semantically named tables (\texttt{cmc}, \texttt{churn},
+\texttt{spambase}) and anonymised ones (\texttt{ozone}, \texttt{phoneme},
+\texttt{bank-anon}). Each task is cut into a $200$-row context, a validation split, and a
+test split; we report AUC (macro one-vs-rest for multiclass) of the frozen model conditioned
+on the context. We deliberately exclude \texttt{adult}, which \citet{bordt2024elephants} show
+is memorised verbatim by GPT-class models.
+
+\paragraph{Protocol.} Backbone: released \texttt{tabicl-classifier-v2}. \NRounds{} prior
+candidates per search arm, \Steps{} LoRA steps each, \NSeeds{} seeds. All arms share one
+A100.
+
+\paragraph{The mismatch is measurable before any agent runs.}
+Our premise is that the released prior does not look like real tabular data. This is
+checkable directly, without any model: sample datasets from the prior, take real OpenML
+tables, and measure both on the same axes (Table~\ref{tab:audit}). The released prior
+generates tables with a median of \PriorFeat{} features against \RealFeat{} in real data,
+class distributions far more skewed than real ones (minority fraction \PriorMinority{} vs
+\RealMinority{}), features that are nearly uncorrelated where real columns are redundant, and
+essentially no low-cardinality (categorical-like) columns. The prior is not a bad prior --- it
+is a prior for a different population of tables than the one it meets.
+
+\input{audit}
+
+\begin{table*}[t]
+\centering
+\small
+\caption{Held-out AUC on \NTest{} test tasks the agent never saw. All rows use the same
+frozen TabICLv2 backbone; the only difference is the prior its LoRA adapter was trained on.
+Random search and the agent are given an identical budget (\NRounds{} candidate priors,
+\Steps{} LoRA steps each), so the gap between them is attributable to the proposer.
+Mean $\pm$ s.d.\ over \NSeeds{} seeds.}
+\label{tab:main}
+\begin{tabular}{lccccccc}
+\toprule
+& \multicolumn{6}{c}{test task} & \\
+\cmidrule(lr){2-7}
+prior the adapter was trained on & cmc & churn & spambase & ozone & phoneme & bank-anon & mean \\
+\midrule
+\maintablebody
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Main result.} Table~\ref{tab:main} reports held-out AUC. Because arms share tasks
+and seeds, we analyse \emph{paired} differences --- one per (task, seed) pair, $n=\ARN{}$ ---
+rather than three seed means, and report a bootstrap $95\%$ CI and a Wilcoxon signed-rank
+$p$.
+
+Adapting to TabICL's own unmodified prior changes held-out AUC by \BPMean{}
+(CI $[\BPCIlo{}, \BPCIhi{}]$): simply doing more LoRA training on the prior the model was
+already pre-trained on does not buy anything. Searching over priors does. Random search
+gains \RPMean{} (CI $[\RPCIlo{}, \RPCIhi{}]$) over the released checkpoint, and the
+agent-revised prior gains \APMean{} (CI $[\APCIlo{}, \APCIhi{}]$, $p=\APP{}$).
+
+The comparison the paper turns on is agent \emph{versus} random search, which holds the
+budget, the knob space, the LoRA compute and the selection rule fixed and varies only who
+proposes the next prior: \ARMean{} (CI $[\ARCIlo{}, \ARCIhi{}]$, $p=\ARP{}$), winning on
+\ARWins{} of \ARN{} (task, seed) pairs.
+
+\paragraph{Search efficiency.} Figure~\ref{fig:search} plots best-so-far development AUC
+against the number of prior candidates evaluated. The agent's advantage is concentrated in
+the first candidates: it does not need to stumble onto a good region of the knob space,
+because it can reason about the mismatch directly.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_search.pdf}
+\caption{Best development AUC as a function of prior candidates evaluated (mean $\pm$ s.d.\
+over seeds). Both search arms pay the same LoRA compute per candidate.}
+\label{fig:search}
+\end{figure}
+
+\paragraph{What did the agent change?} The revisions are interpretable and consistent across
+seeds (Table~\ref{tab:knobs}). The agent narrows \texttt{max\_classes} from TabICL's $10$
+toward $2$, having observed that every development task is binary or near-binary; shrinks
+\texttt{max\_seq\_len} and enables \texttt{replay\_small}, matching the small-table regime
+TFMs are actually deployed in; and raises \texttt{cat\_prob}, the fraction of columns made
+categorical, because real tables carry categorical columns that a purely numeric SCM prior
+under-produces. These are exactly the mismatches a prior designed without downstream tasks in
+view would be expected to have --- and they are found, not hand-specified.
+
+\input{knobs}
+
+\section{Limitations}
+
+The gains are real but modest, and they are measured on a single backbone (TabICL) at one
+adapter size. We adapt rather than pre-train, so we can only \emph{repair} a prior, not
+demonstrate that a better prior trained from scratch would go further; the ceiling of this
+method is unknown. The agent's knowledge enters through summary statistics of the
+development tasks, which means it can only correct mismatches that those statistics reveal
+--- a deficiency invisible in feature counts and class balance will stay invisible. Our
+search budget (\NRounds{} candidates) is small enough that random search has not converged,
+which flatters the agent; with a much larger budget the two arms may meet. Finally, TabICL
+does not consume column names, so the prior cannot carry semantics: the world knowledge the
+LLM contributes here is knowledge about the \emph{shape} of real tabular problems, not about
+what any particular column means. Injecting semantics would require a backbone that reads
+headers \cite{spinaci2025contexttab}.
+
+\section{Conclusion}
+
+The synthetic prior of a tabular foundation model is usually treated as a fixed artefact of
+its pre-training. We showed it is an editable object: exposing its generating configuration
+to an LLM agent, and using LoRA to make each candidate cheap to evaluate, lets a released
+checkpoint be repaired against downstream evidence for a few GPU-hours. The agent beats
+random search over the same knobs under the same budget, which says the useful thing --- that
+knowing what real tables look like is worth more than sampling the space uniformly.
+
+\bibliographystyle{icml2025}
+\bibliography{refs}
+
+\end{document}

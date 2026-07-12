@@ -1,0 +1,30 @@
+# secrets — never commit
+.sshpw
+*.pem
+id_*
+
+# environments and vendored clones
+.venv/
+tabicl-src/
+tabarena-src/
+tools/tectonic
+
+# caches and artifacts
+cache/
+__pycache__/
+*.pyc
+*.log
+*.pkl
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.log
+
+# generated from results by emit.py — never hand-written, never committed stale
+paper/numbers.tex
+paper/knobs.tex
+paper/audit.tex
+paper/fig_search.pdf
+paper/main.pdf
+paper/icml2025/
