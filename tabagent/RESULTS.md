@@ -67,10 +67,17 @@ And on held-out TEST (24 tasks, scored once, seed 0):
 | | TabArena TEST AUC | vs released | tasks won |
 |---|---|---|---|
 | released checkpoint | **0.8171** | — | — |
-| `agent` (LLM-authored priors) | 0.8115 | −0.0056 | 7/24 |
 | `random` (same budget, no LLM) | 0.8142 | −0.0028 | 8/24 |
+| `agent` (LLM-authored priors) | 0.8115 | −0.0056 | 7/24 |
+| `anchored` (TabICL's prior kept, agent's added) | 0.8111 | −0.0060 | 7/24 |
 
 **Every arm loses to leaving the checkpoint alone. The agent loses to random search.**
+
+`anchored` was the last hypothesis standing. Every other arm *replaced* the released prior,
+and the thing we kept measuring was that its breadth is load-bearing — so we kept it in the
+mixture as an anchor and only *added* the agent's priors on top. It did not help either
+(−0.0060). The failure is not that we threw the good prior away. Adapting to a revised prior
+does not work here, full stop.
 
 ## 4. Why: the unrealism is domain randomisation, not a bug
 
@@ -100,13 +107,34 @@ then shows closing it is harmful.
 
 ## 5. What we have not shown
 
-- One backbone (TabICL), one adapter family (LoRA on the ICL FFN).
-- The final runs are small (2 rounds, 150 steps/prior) — enough to establish direction, not
-  to bound the effect size. The one setting that helped (+0.0023) has not been replicated
-  across seeds.
-- `anchored` — keeping TabICL's own prior *in* the mixture and adding the agent's on top,
-  rather than replacing it — is the obvious next move and the only untried one. Everything
-  above discards the released prior, and everything above loses.
+- One backbone (TabICL), one adapter family (LoRA on the ICL transformer's FFN). TabPFN v2
+  may behave differently; its prior is differently constructed.
+- The final runs are small — 2 rounds, 150 steps per prior, one seed on the headline table.
+  Enough to establish direction, not to bound an effect size. The one setting that ever
+  helped (alpha 128, +0.0023 DEV) was never replicated across seeds.
+- We adapt; we never re-pre-train. A prior can only be *repaired* here, not replaced from
+  scratch, so we cannot say what a TFM pre-trained on a realistic prior from step zero would
+  do. That is the experiment this result argues is worth running — and argues will fail.
+- The agent optimises against DEV tasks' validation rows. A larger search would eventually
+  overfit them; ours is too short to have done so, which is also why the effect sizes are
+  small.
+
+## 6. What this cost
+
+Roughly six hours on one A100, and four mistakes worth recording because each one produced a
+result that looked real:
+
+- **lr 1e-4 was destroying the pre-trained weights**, not improving the prior. Every arm lost
+  ~0.006 AUC for that reason alone. Swept and fixed (1e-5), and the losses vanished — leaving
+  the flat null of §4.
+- **Three grid runs ran concurrently** after a `pkill` silently failed; they shared one
+  results file and OOM'd the GPU. Discarded.
+- **C2ST saturates.** At AUC 1.000 it has no gradient — a single mismatched axis pins it
+  there, and one of ours (`n_rows`) is an artefact of our own row cap. Optimising against it
+  taught the agent nothing. Replaced with a graded per-axis KS distance.
+- **The safety filter rejected the agent's own valid code** — it banned the substring
+  `import`, and the model had written `import numpy as np` in a header. Three of five rounds
+  were thrown away before we noticed.
 
 ## Reproducing
 
