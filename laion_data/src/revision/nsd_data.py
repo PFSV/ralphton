@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -134,22 +135,43 @@ def session_urls(subj: str, sess: int) -> list[tuple[str, Path]]:
     return out
 
 
-def _fetch(url_dest: tuple[str, Path]) -> Path:
+def _fetch(url_dest: tuple[str, Path], attempts: int = 6) -> Path:
+    """Download one file, resumably and idempotently.
+
+    Note on `--retry-all-errors`: plain `curl --retry` does NOT retry DNS resolution
+    failures (exit 6). Running many parallel downloads alongside other traffic can overload
+    the local resolver, and without this flag those failures are fatal rather than
+    transient. We hit exactly that. We also back off between attempts, since the fix for a
+    saturated resolver is to slow down, not to hammer it.
+    """
     url, dest = url_dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() and dest.stat().st_size > 0:
         return dest
     tmp = dest.with_suffix(dest.suffix + ".part")
-    subprocess.run(
-        ["curl", "-sS", "--fail", "--retry", "5", "--retry-delay", "3", "-o", str(tmp), url],
-        check=True,
-    )
-    tmp.rename(dest)
-    return dest
+
+    last = None
+    for i in range(attempts):
+        r = subprocess.run(
+            ["curl", "-sS", "--fail", "--location", "-C", "-",
+             "--retry", "8", "--retry-delay", "5", "--retry-all-errors",
+             "--connect-timeout", "30", "-o", str(tmp), url],
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0 and tmp.exists() and tmp.stat().st_size > 0:
+            tmp.rename(dest)
+            return dest
+        last = r.stderr.strip()
+        time.sleep(5 * (i + 1))  # linear backoff
+    raise RuntimeError(f"failed to download {url} after {attempts} attempts: {last}")
 
 
-def download_subject_sessions(subj: str, workers: int = 12) -> None:
-    """Download every session's lh/rh betas for one subject, in parallel."""
+def download_subject_sessions(subj: str, workers: int = 6) -> None:
+    """Download every session's lh/rh betas for one subject, in parallel.
+
+    `workers` is deliberately modest: at 16 the local DNS resolver failed under the
+    combined load of this download, the stimulus download and HuggingFace traffic.
+    """
     jobs = [u for s in range(1, C.N_SESSIONS[subj] + 1) for u in session_urls(subj, s)]
     with ThreadPoolExecutor(max_workers=workers) as ex:
         list(ex.map(_fetch, jobs))
@@ -249,7 +271,7 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
 def main() -> None:
     ap = argparse.ArgumentParser(description="M1: NSD ingest + N-BETAZ (fsaverage)")
     ap.add_argument("--subjects", nargs="*", default=C.SUBJECTS)
-    ap.add_argument("--workers", type=int, default=12)
+    ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--keep-raw", action="store_true")
     args = ap.parse_args()
 
@@ -259,6 +281,12 @@ def main() -> None:
     print(f"[M1] |D-515| = {len(c515)}", flush=True)
 
     for subj in args.subjects:
+        out = BETAS_DIR / f"{subj}_betas_z_avg_fsaverage.npy"
+        if out.exists():
+            # Already built. Do NOT re-download the raw sessions -- they were deleted on
+            # purpose after the build, and re-fetching them would cost ~39 GB per subject.
+            print(f"[M1] {subj}: already built, skipping", flush=True)
+            continue
         print(f"[M1] {subj}: downloading {C.N_SESSIONS[subj]} sessions...", flush=True)
         download_subject_sessions(subj, workers=args.workers)
         print(f"[M1] {subj}: building N-BETAZ...", flush=True)
