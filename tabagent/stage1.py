@@ -73,6 +73,19 @@ def evaluate(state, tasks, seed, adapter=ADAPTER, alpha: int = 32,
         m = pt.LoRATabICL(state, seed=seed, adapter=adapter, alpha=alpha).fit(
             t.X_ctx.to_numpy(), t.y_ctx)
         p = m.predict_proba(X_eval.to_numpy())
+
+        # A NaN here is not a nuisance to be imputed away — it is the adapted model
+        # diverging on a real table. The released checkpoint never does this, so the
+        # asymmetry is a result. Record it as a failure, name the task, and leave it out of
+        # the mean rather than crashing the run (which is what it used to do) or silently
+        # nan_to_num-ing it into a fake 0.5 (which would hide it).
+        if not np.isfinite(p).all():
+            print(f"    !! {t.name}: adapted model produced non-finite predictions "
+                  f"({(~np.isfinite(p)).mean():.1%} of cells) — excluded from the mean",
+                  flush=True)
+            scores[t.name] = float("nan")
+            continue
+
         present = np.unique(t.y_ctx)
         if t.n_classes == 2 and p.shape[1] == 2:
             a = roc_auc_score(y_eval, p[:, 1])

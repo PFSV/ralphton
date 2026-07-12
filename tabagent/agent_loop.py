@@ -269,6 +269,12 @@ def main():
     ap.add_argument("--audit-n", type=int, default=12)
     a = ap.parse_args()
 
+    # Prove the agent is reachable before spending a GPU-hour on an arm that needs it.
+    # A run that cannot reach its LLM must not start, and must not quietly become a
+    # different experiment.
+    if a.arm in ("agent", "anchored"):
+        print(f"[preflight] LLM live via {llm.preflight()}", flush=True)
+
     out = HERE / f"agentloop_{a.arm}_{a.seed}.json"
     rng = np.random.default_rng(a.seed)
     dev, test = tabarena.load_split(a.seed)
@@ -277,7 +283,7 @@ def main():
     # The loop may only ever see DEV tasks' VALIDATION rows. Their test rows are the
     # answer, and an agent that steers on the answer is just overfitting it slowly.
     base_dev = evaluate(None, dev, a.seed, alpha=ALPHA, split="val")
-    base_dev_mean = float(np.mean(list(base_dev.values())))
+    base_dev_mean = float(np.nanmean(list(base_dev.values())))
     print(f"[{a.arm} seed {a.seed}] released checkpoint: DEV(val) {base_dev_mean:.4f}\n", flush=True)
 
     # Compute is matched to the arm, not to the agent: K priors, STEPS_PER_PRIOR each.
@@ -305,7 +311,7 @@ def main():
             new = propose(a.k - 1, dist_txt, down_txt, history,
                           specs[1:] if specs else None)
             if new is None:
-                new = random_specs(a.k - 1, rng)
+                raise llm.LLMDown("agent proposed nothing in the `anchored` arm")
             # the released prior is the anchor; the agent's priors are additions to it
             specs = [dict(cfg=dict(pt.BASE_CFG), code="", role="TabICL's own prior (anchor)",
                           realiser_ok=False, edits={})] + new
@@ -323,9 +329,12 @@ def main():
                 down_txt = history[-1]["down_txt"]
             new = propose(a.k, dist_txt, down_txt, history, specs)
             if new is None:
-                print("  agent produced nothing; falling back to random for this round",
-                      flush=True)
-                new = random_specs(a.k, rng)
+                # NEVER substitute random here. The `agent` arm silently doing random search
+                # while still labelling itself `agent` is precisely the bug that invalidated
+                # the first full-scale run: the OpenAI key had been revoked, every round
+                # printed "falling back to random", and the resulting table was published as
+                # an agent result. If the agent cannot propose, the arm has no meaning — stop.
+                raise llm.LLMDown("agent proposed nothing in the `agent` arm")
             specs = new
             for i, s in enumerate(specs):
                 print(f"  prior {i}: {s['role']}  realiser={'ok' if s['realiser_ok'] else 'none'}"
@@ -334,7 +343,7 @@ def main():
         gap, dist_txt = distribution_report(specs, real_meta, a.seed, n=a.audit_n)
         st, loss = train_mixture(specs, a.seed, steps, n_batches=a.buffer)
         sc = evaluate(st, dev, a.seed, alpha=ALPHA, split="val")
-        dm = float(np.mean(list(sc.values())))
+        dm = float(np.nanmean(list(sc.values())))
         down_txt = downstream_report(dev, sc, base_dev)
 
         print(f"  gap {gap:.3f} | DEV {dm:.4f} ({dm - base_dev_mean:+.4f}) "
@@ -357,8 +366,11 @@ def main():
     st, _ = train_mixture(final["specs"], a.seed, steps, n_batches=a.buffer)
     base_test = evaluate(None, test, a.seed, alpha=ALPHA, split="test")
     test_sc = evaluate(st, test, a.seed, alpha=ALPHA, split="test")
-    bt = float(np.mean(list(base_test.values())))
-    tt = float(np.mean(list(test_sc.values())))
+    bt = float(np.nanmean(list(base_test.values())))
+    tt = float(np.nanmean(list(test_sc.values())))
+    n_bad = sum(not np.isfinite(v) for v in test_sc.values())
+    if n_bad:
+        print(f"   !! {n_bad}/{len(test_sc)} TEST tasks diverged (non-finite predictions) and are excluded", flush=True)
     wins = sum(test_sc[k] > base_test[k] for k in base_test)
 
     print(f"\n══ TabArena TEST ({len(test)} held-out tasks, scored once) ══")

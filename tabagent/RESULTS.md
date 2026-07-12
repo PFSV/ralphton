@@ -2,6 +2,16 @@
 
 Everything here is measured. Nothing is estimated, smoothed, or filled in.
 
+> **Retraction (2026-07-12).** A full-scale run of all three arms was briefly reported in
+> `NEXT.md`. Its `agent` and `anchored` arms were **not agent results** — the OpenAI key had
+> been revoked, `llm.ask()` swallowed the 401 and returned `""`, and the loop silently
+> substituted random priors while still labelling itself `agent`. Those numbers are withdrawn;
+> see `NEXT.md` for the full accounting. **The results below are unaffected** — they were
+> produced while the LLM was live (verified against the response cache and the run logs), and
+> they contain real agent proposals and real LLM-authored generator code. The failure mode has
+> been fixed at the root: the LLM now fails loudly, and a run that cannot reach its agent
+> refuses to start.
+
 ## The setup
 
 TabICL is a tabular foundation model pre-trained on a prior over random structural causal
@@ -134,7 +144,20 @@ result that looked real:
   taught the agent nothing. Replaced with a graded per-axis KS distance.
 - **The safety filter rejected the agent's own valid code** — it banned the substring
   `import`, and the model had written `import numpy as np` in a header. Three of five rounds
-  were thrown away before we noticed.
+  were thrown away before we noticed. **We then fixed it in one file and not the other**: the
+  identical filter was still live in `agent.py`, silently discarding every feature the
+  inference-time agent proposed. In the logs this is indistinguishable from an LLM with no
+  ideas. Fixing it turned `caafe` on `diabetes` from +0.0000 (0 features) into +0.0076 (2
+  features), instantly.
+- **A revoked API key turned the agent into random search, silently, for a whole full-scale
+  run.** `ask()` caught the 401 and returned `""`; the caller read that as "no proposal" and
+  fell back to a random prior — while still reporting the arm as `agent`. Nothing crashed and
+  the numbers looked plausible. Retracted above.
+
+Three of these five are the same mistake wearing different clothes: **a component failing
+quietly, and the silence being read as a result.** The bad exception handler, the over-strict
+filter, and the dead key were all caught only by reading logs that had been printing the
+problem the whole time. Every fallback is now loud or fatal.
 
 ## Reproducing
 

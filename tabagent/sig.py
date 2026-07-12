@@ -34,5 +34,5 @@ for a, b in itertools.combinations(arms, 2):
 
 print("\nper-arm TEST mean over seeds:")
 for a in arms:
-    m = [np.mean(list(by[a][s].values())) for s in seeds]
+    m = [np.nanmean(list(by[a][s].values())) for s in seeds]
     print(f"  {a:<12s} {np.mean(m):.4f} ± {np.std(m):.4f}   (seeds: {np.round(m,4).tolist()})")

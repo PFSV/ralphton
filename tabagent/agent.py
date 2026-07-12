@@ -75,11 +75,28 @@ def _exec_col(code: str, frames: dict[str, pd.DataFrame], new: str) -> bool:
     return True
 
 
-_BANNED = re.compile(r"\b(import|open|exec|eval|__|subprocess|os\.|sys\.|socket)\b")
+# The same over-strict filter that silently ate three of five rounds in the prior loop was
+# still live here: it banned the SUBSTRING "import", and the model writes `import numpy as np`
+# out of habit even when told numpy is in scope. Every feature it proposed was thrown away
+# before it ran, which reads in the logs as "the LLM had no good ideas" — it never got to have
+# one. Strip the import lines (pd/np are already provided) and screen only what is actually
+# dangerous.
+DANGEROUS = re.compile(
+    r"\b(exec|eval|compile|open|input|globals|locals|getattr|setattr|delattr"
+    r"|subprocess|socket|requests|urllib|shutil|pathlib|pickle)\b"
+    r"|\b(os|sys|io)\.|__[a-z]+__|while\s+True"
+)
+IMPORT_LINE = re.compile(r"^\s*(import|from)\s+.*$", re.M)
 
 
-def _safe(code: str) -> bool:
-    return not _BANNED.search(code)
+def _sanitize(code: str) -> tuple[str, str]:
+    if not code:
+        return "", "empty"
+    code = IMPORT_LINE.sub("", code)
+    hit = DANGEROUS.search(code)
+    if hit:
+        return "", f"dangerous construct: {hit.group(0)!r}"
+    return code, "ok"
 
 
 # ------------------------------------------------------------------ diagnosis
@@ -163,8 +180,15 @@ def run(t, arm: str, budget_total: float, seed: int = 0,
             cost = PRICES.llm_call
             B.charge("llm:add_feature", cost)
             spec = _propose_feature(t, frames["ctx"], diag, scratch)
-            name, code = spec.get("name", ""), spec.get("code", "")
-            if name and code and _safe(code) and name not in frames["ctx"].columns:
+            name = spec.get("name", "")
+            code, why = _sanitize(spec.get("code", ""))
+            if not name:
+                detail = "no feature name"
+            elif not code:
+                detail = f"rejected: {why}"          # never silent — a filtered-out proposal
+            elif name in frames["ctx"].columns:      # looks identical to a stupid agent
+                detail = f"{name} (already exists)"
+            else:
                 trial = {k: v.copy() for k, v in frames.items()}
                 if _exec_col(code, trial, name):
                     Xn, yn = _rebuild(trial, y_ctx, t, bought, synth_X, synth_y, name)
@@ -176,8 +200,6 @@ def run(t, arm: str, budget_total: float, seed: int = 0,
                     detail = f"{name} := {code.splitlines()[-1][:60]}"
                 else:
                     detail = f"{name} (exec failed)"
-            else:
-                detail = "invalid proposal"
 
         elif act == "drop_feature":
             cost = PRICES.curate
@@ -351,9 +373,9 @@ Write a function `sample(n, rng)` returning `(rows, labels)`:
 
 JSON: {{"code": "def sample(n, rng):\\n    ...", "why": "<12 words>"}}"""
     spec = llm.ask_json(prompt, {})
-    code = spec.get("code", "") if isinstance(spec, dict) else ""
+    code, _ = _sanitize(spec.get("code", "") if isinstance(spec, dict) else "")
     rng = np.random.default_rng(seed)
-    if code and _safe(code):
+    if code:
         g = {"np": np}
         try:
             exec(code, g)  # noqa: S102

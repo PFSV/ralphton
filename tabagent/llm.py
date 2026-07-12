@@ -15,7 +15,9 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
+import time
 import urllib.request
 from pathlib import Path
 
@@ -91,26 +93,87 @@ def backend() -> str:
     return "openai" if KEY else ("tunnel" if URL else "claude-cli")
 
 
-def ask(prompt: str) -> str:
-    tag = OPENAI_MODEL if KEY else MODEL
+class LLMDown(RuntimeError):
+    """No backend answered. Raised, never swallowed.
+
+    This class exists because the alternative cost us a full-scale run. `ask` used to catch
+    every exception and return "", and the caller read "" as "the agent had no proposal" and
+    quietly substituted a random prior. The OpenAI key was revoked mid-experiment, so all
+    three arms silently became random search while still reporting themselves as `agent` and
+    `anchored`. Nothing crashed; the numbers looked plausible; they were fiction.
+
+    A dead LLM must stop the experiment, not redefine it.
+    """
+
+
+def _backends():
+    """Every backend that could possibly answer, best first, each with the model tag its
+    answers are cached under. We try them all before giving up — a revoked key should fall
+    through to the tunnel, not kill the run.
+
+    The tag is part of the cache key because two backends are two different models, and a
+    cached gpt-4.1 answer must not be replayed as if Claude had said it."""
+    if KEY:
+        yield "openai", OPENAI_MODEL, _via_openai
+    if URL:
+        yield "tunnel", MODEL, _via_http
+    if shutil.which("claude"):
+        yield "claude-cli", MODEL, _via_cli
+
+
+def _cached(tag: str, prompt: str) -> Path:
     h = hashlib.sha256(f"{tag}\x00{prompt}".encode()).hexdigest()[:32]
-    f = CACHE / f"{h}.json"
-    if f.exists():
-        _CALLS["cached"] += 1
-        return json.loads(f.read_text())["response"]
-    try:
-        if KEY:
-            txt = _via_openai(prompt)
-        elif URL:
-            txt = _via_http(prompt)
-        else:
-            txt = _via_cli(prompt)
-    except Exception:
-        txt = ""
-    if txt:
-        _CALLS["n"] += 1
-        f.write_text(json.dumps({"model": tag, "prompt": prompt, "response": txt}))
-    return txt
+    return CACHE / f"{h}.json"
+
+
+def ask(prompt: str, retries: int = 2) -> str:
+    global KEY
+    # A hit under ANY backend's tag is a hit — the run should resume for free even if it
+    # comes back up on a different backend than it went down on.
+    for _, tag, _ in _backends():
+        f = _cached(tag, prompt)
+        if f.exists():
+            _CALLS["cached"] += 1
+            return json.loads(f.read_text())["response"]
+
+    errs = []
+    for name, tag, fn in _backends():
+        for attempt in range(retries + 1):
+            try:
+                txt = fn(prompt).strip()
+                if txt:
+                    _CALLS["n"] += 1
+                    _cached(tag, prompt).write_text(
+                        json.dumps({"model": tag, "prompt": prompt, "response": txt}))
+                    return txt
+                errs.append(f"{name}: empty response")
+            except Exception as e:
+                errs.append(f"{name}: {type(e).__name__}: {e}")
+                # A revoked key will never come back within a run. Demote it once and let
+                # the tunnel take over, instead of paying two timeouts on every call.
+                if name == "openai" and "401" in str(e):
+                    print("  [llm] OpenAI key rejected (401) — dropping it, "
+                          "falling through to the next backend", flush=True)
+                    KEY = None
+                    break
+                if attempt < retries:
+                    time.sleep(2 ** attempt)
+    raise LLMDown("no LLM backend answered:\n  " + "\n  ".join(errs[-6:]))
+
+
+def preflight() -> str:
+    """Prove the LLM is alive BEFORE spending GPU hours. Returns the backend that answered.
+
+    Call this at the top of anything that depends on the agent. A run that cannot reach its
+    agent must never start."""
+    names = [n for n, _, _ in _backends()]
+    if not names:
+        raise LLMDown("no backend configured: no OPENAI_API_KEY, no TABAGENT_LLM_URL, "
+                      "no `claude` on PATH")
+    txt = ask(f"Reply with exactly the word PONG. (nonce {os.getpid()})", retries=1)
+    if "PONG" not in txt.upper():
+        raise LLMDown(f"backend answered but not sanely: {txt[:120]!r}")
+    return ",".join(names)
 
 
 def ask_json(prompt: str, default):

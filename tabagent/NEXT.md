@@ -3,69 +3,66 @@
 Read `RESULTS.md` first for the measured findings. This file is the handoff: what is running,
 what is known, what is still open, and the exact commands to pick it back up.
 
-## The one-line state
+## RETRACTED: the previous full-scale table was not an agent result
 
-The **prior-repair** hypothesis is dead or dying — every arm loses to leaving the checkpoint
-alone, and the mechanism (domain randomisation) explains why. The **context-repair** idea is
-the live one: same agent, applied at inference time, already beat the baseline on `credit-g`
-and has never been run at scale. That is the next experiment, and it is written and waiting.
+**An earlier version of this file reported a full-scale run of all three arms. Those numbers
+were real, but two of the three arms were mislabelled, and every conclusion drawn from them
+about *the agent* was wrong. Retracted in full.**
+
+What happened: the OpenAI key in `~/ralphton/.env` was revoked partway through the project.
+`llm.ask()` caught the 401, returned `""`, and the caller read an empty string as *"the agent
+had no proposal"* and quietly substituted a random prior. Every round of the full-scale run
+printed `agent produced nothing; falling back to random for this round` — and then reported
+itself as `agent` anyway.
+
+So, precisely:
+
+- `agent` → **was pure random search.** Not an agent result.
+- `anchored` → **was base + random priors**, not base + *agent* priors. Still a distinct arm,
+  but not what its name claims.
+- `random` → genuinely random. The only arm that was what it said.
+
+**No arm tested LLM-designed priors at full scale.** The claim that "the agent followed the
+evidence and widened the gap 0.646 → 0.666" was random noise with a story pasted on top.
+
+The small-scale results in `RESULTS.md` §1–§4 are **unaffected** — the LLM cache
+(`cache/llm/`) shows live `gpt-4.1` responses through 07:26, and those logs contain real
+proposals with real reasons and real generator code. The key died after them. So the project's
+core stands; only the full-scale table was fiction.
+
+### The fix, which matters more than the numbers
+
+A dead LLM must **stop** the experiment, not silently redefine it.
+
+- `llm.ask()` now falls through backends (openai → tunnel → local CLI), retries, demotes a
+  401'd key, and **raises `LLMDown`** if nothing answers. It can no longer return `""`.
+- `agent_loop.py` **aborts** if the agent proposes nothing. It never substitutes random.
+- `llm.preflight()` proves the LLM is alive with a PONG **before any GPU is spent**. A run
+  that cannot reach its agent does not start.
+
+A second bug of the same family was found in `agent.py`: the safety filter banned the
+*substring* `import`, so every feature the LLM proposed was discarded before it ran — the logs
+read as "the LLM had no good ideas" when it had never been allowed to have one. (The identical
+bug was fixed in `realism.py` weeks earlier and never ported.) With it fixed, `caafe`
+immediately added two working features to `diabetes` for +0.0076.
+
+**The lesson to carry:** every silent fallback in this codebase was a lie generator. If a
+component can fail, it must fail loudly or not at all.
 
 ## What is running right now
 
-A full-scale prior run (`full.sh`): 3 arms × 3 seeds × 3 rounds × 3 priors × 1200 steps.
-Seed 0 is done; seeds 1–2 are in flight. Check it:
+`context_bench.py` — the inference-time context agent across all 24 TabArena TEST tasks
+(budget 100 credits, seed 0), on GPU 1. This is the first time it has ever run at scale.
 
 ```bash
-ssh $GPU_HOST 'pgrep -af agent_loop; cd ~/tabagent && grep -hE "gap .*DEV|: 0\.|wins" full_*.log'
+ssh $GPU_HOST 'pgrep -af context_bench; cd ~/tabagent && grep -v 401 ctx.log | tail -20'
 ```
 
-If it needs relaunching, detach it — a plain `ssh "bash full.sh"` dies with the network, and
-this network drops:
+It needs the LLM. The OpenAI key is revoked, so it runs off a reverse tunnel to the laptop's
+`claude` (`./tunnel.sh` locally, `TABAGENT_LLM_URL=http://127.0.0.1:8791` on the server).
+**A fresh API key would remove that dependency and should be the first thing to fix.**
 
-```bash
-ssh $GPU_HOST 'cd ~/tabagent && setsid nohup bash full.sh > full.out 2>&1 < /dev/null &'
-```
-
-### Seed 0, at full scale
-
-Per-round DEV (validation rows of the 12 DEV tasks — the loop's only signal):
-
-| arm | round 0 | round 1 | round 2 |
-|---|---|---|---|
-| `agent` | gap 0.646 → **−0.0112** | gap 0.666 → −0.0060 | gap 0.521 → −0.0067 |
-| `random` | gap 0.672 → −0.0089 | gap 0.590 → −0.0046 | gap 0.492 → −0.0109 |
-| `anchored` | gap 0.694 → −0.0063 | gap 0.633 → −0.0094 | gap 0.694 → −0.0085 |
-
-Held-out TabArena TEST, 24 tasks, scored once:
-
-| | TEST AUC | vs released | tasks won |
-|---|---|---|---|
-| released checkpoint | **0.8171** | — | — |
-| `random` | 0.8139 | −0.0032 | 8/24 |
-| `anchored` | 0.8137 | −0.0034 | **11/24** |
-| `agent` | *(pending)* | | |
-
-Four things worth keeping:
-
-1. **The full budget halves the damage but does not cross zero.** 150 steps → −0.0060 on
-   TEST; 1200 steps → −0.0032. The small runs were not hiding a win, they were exaggerating a
-   loss.
-2. **The realism/performance anti-correlation reproduces at full scale, across arms.** At
-   round 0 the ranking by distribution gap is exactly the reverse of the ranking by DEV:
-   `anchored` (gap 0.694, *least* realistic) is best; `agent` (gap 0.646, most realistic) is
-   worst.
-3. **The agent followed the evidence over the intuition.** Told "chase AUC, not the gap —
-   closing the gap has been hurting", it *widened* the gap in round 1 (0.646 → 0.666) and
-   improved (−0.0112 → −0.0060).
-4. **`random` improves across rounds too**, and `random` has no feedback at all — more rounds
-   are just more lottery tickets. Any "the agent learns across rounds!" claim has to beat
-   that. This is exactly what the control is for.
-
-`anchored` winning **11 of 24 tasks** while losing on the mean is the most interesting loose
-thread: prior repair is not uniformly harmful, it is harmful *on average*. Which tasks it
-helps, and what they have in common, is unexamined.
-
-## The next experiment (written, never run)
+## The experiment now running (previously: written, never run)
 
 `context_bench.py` — the other half of the story. Instead of repairing what the model *learned
 from*, repair what it *sees*. The model is frozen; `fit()` loads a context, it does not train.
