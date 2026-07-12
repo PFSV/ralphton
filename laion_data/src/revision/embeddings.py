@@ -125,17 +125,33 @@ def _pos_words(captions: list[str], kind: str) -> list[str]:
     return words
 
 
+def _custom_join(words: list[str]) -> str:
+    """Re-join tokens, suppressing the space before punctuation and clitics.
+
+    SOURCE: nsd_embeddings_utils.py:130-137, reproduced exactly. A plain `" ".join` is NOT
+    equivalent -- it yields "a man ." rather than "a man." and measurably shifts the
+    embeddings.
+    """
+    out = ""
+    for i, w in enumerate(words):
+        if i > 0 and w not in ",.?!;:" and not w.startswith("'"):
+            out += " "
+        out += w
+    return out
+
+
 def _scramble(s: str, rng: random.Random) -> str:
     """Shuffle the token order of one caption.
 
     SOURCE: nsd_embeddings_utils.py:146-150 -- tokenize with NLTK, `shuffle` in place,
-    re-join. Punctuation tokens are shuffled along with words, exactly as in the release.
+    re-join with `custom_join`. Punctuation tokens are shuffled along with the words,
+    exactly as in the release (so a period can land mid-sentence).
     """
     import nltk
 
     toks = nltk.word_tokenize(s)
     rng.shuffle(toks)
-    return " ".join(toks)
+    return _custom_join(toks)
 
 
 def build_variant(name: str, force: bool = False) -> Path:
