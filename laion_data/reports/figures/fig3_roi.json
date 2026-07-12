@@ -1,0 +1,2959 @@
+{
+ "seed": 0,
+ "noise_ceilings": {
+  "early": {
+   "subj01": 0.6045507788658142,
+   "subj02": 0.5864468812942505,
+   "subj03": 0.5240504741668701,
+   "subj04": 0.5841929912567139,
+   "subj05": 0.5049972534179688,
+   "subj06": 0.5006561279296875,
+   "subj07": 0.44116055965423584,
+   "subj08": 0.4737122058868408
+  },
+  "ventral": {
+   "subj01": 0.7550210952758789,
+   "subj02": 0.7940225005149841,
+   "subj03": 0.756750226020813,
+   "subj04": 0.7242348790168762,
+   "subj05": 0.801493763923645,
+   "subj06": 0.6643387675285339,
+   "subj07": 0.657883882522583,
+   "subj08": 0.6303170919418335
+  },
+  "lateral": {
+   "subj01": 0.5431817770004272,
+   "subj02": 0.5812320709228516,
+   "subj03": 0.4708389639854431,
+   "subj04": 0.5202599167823792,
+   "subj05": 0.5907084941864014,
+   "subj06": 0.3546365201473236,
+   "subj07": 0.48386508226394653,
+   "subj08": 0.2472103387117386
+  },
+  "parietal": {
+   "subj01": 0.44498002529144287,
+   "subj02": 0.4648600220680237,
+   "subj03": 0.3639240860939026,
+   "subj04": 0.3308440148830414,
+   "subj05": 0.5304174423217773,
+   "subj06": 0.36059948801994324,
+   "subj07": 0.3185732662677765,
+   "subj08": 0.200628861784935
+  }
+ },
+ "rois": {
+  "early": {
+   "raw": {
+    "subj01": {
+     "mpnet_captions": 0.08705304956063628,
+     "mpnet_categories": 0.0569143786188215,
+     "mpnet_nouns": 0.06982502933591604,
+     "mpnet_verbs": 0.0238485252589453,
+     "mpnet_allwords": 0.057266900315880775,
+     "multihot": 0.03206678082351573,
+     "fasttext_categories": 0.04381078691338189,
+     "fasttext_allwords": 0.06203053598292172,
+     "glove_categories": 0.038518183400155975,
+     "glove_allwords": 0.055164378192275765
+    },
+    "subj02": {
+     "mpnet_captions": 0.08977353794500231,
+     "mpnet_categories": 0.0556153488252312,
+     "mpnet_nouns": 0.07199974336661398,
+     "mpnet_verbs": 0.02621942068595672,
+     "mpnet_allwords": 0.06134656688198447,
+     "multihot": 0.034458973444998264,
+     "fasttext_categories": 0.04654455464333296,
+     "fasttext_allwords": 0.0637766339071095,
+     "glove_categories": 0.041729545793496074,
+     "glove_allwords": 0.05642296450212598
+    },
+    "subj03": {
+     "mpnet_captions": 0.06939927043934022,
+     "mpnet_categories": 0.04849551654901476,
+     "mpnet_nouns": 0.05959383258596063,
+     "mpnet_verbs": 0.021517349186979118,
+     "mpnet_allwords": 0.05165848923817037,
+     "multihot": 0.0332301770066542,
+     "fasttext_categories": 0.03953300562176493,
+     "fasttext_allwords": 0.05401630362405652,
+     "glove_categories": 0.036717367121919746,
+     "glove_allwords": 0.04706704793798347
+    },
+    "subj04": {
+     "mpnet_captions": 0.08256203322498887,
+     "mpnet_categories": 0.05655654254196971,
+     "mpnet_nouns": 0.0685969485245921,
+     "mpnet_verbs": 0.0276482192329476,
+     "mpnet_allwords": 0.06013210307530783,
+     "multihot": 0.0383148284163326,
+     "fasttext_categories": 0.04623725939287666,
+     "fasttext_allwords": 0.06354046295638438,
+     "glove_categories": 0.04254711911090891,
+     "glove_allwords": 0.05936238252454334
+    },
+    "subj05": {
+     "mpnet_captions": 0.10050025114789606,
+     "mpnet_categories": 0.06733706789091229,
+     "mpnet_nouns": 0.0847303507477045,
+     "mpnet_verbs": 0.02676521596333714,
+     "mpnet_allwords": 0.06834434017539025,
+     "multihot": 0.050129036481957885,
+     "fasttext_categories": 0.05434990556910634,
+     "fasttext_allwords": 0.07416688468307257,
+     "glove_categories": 0.05060014521703124,
+     "glove_allwords": 0.0687499681301415
+    },
+    "subj06": {
+     "mpnet_captions": 0.12068223280291404,
+     "mpnet_categories": 0.08239562229643907,
+     "mpnet_nouns": 0.10141724780682594,
+     "mpnet_verbs": 0.036203236572609675,
+     "mpnet_allwords": 0.08028283102377769,
+     "multihot": 0.05700997617696562,
+     "fasttext_categories": 0.06846344849515346,
+     "fasttext_allwords": 0.08991104965248416,
+     "glove_categories": 0.06412354889776438,
+     "glove_allwords": 0.08388724820988794
+    },
+    "subj07": {
+     "mpnet_captions": 0.05244607986882329,
+     "mpnet_categories": 0.03252580455096904,
+     "mpnet_nouns": 0.04778893426526338,
+     "mpnet_verbs": 0.016046174291550416,
+     "mpnet_allwords": 0.038879156642360614,
+     "multihot": 0.02373629534849897,
+     "fasttext_categories": 0.028029994713142513,
+     "fasttext_allwords": 0.041975843464024366,
+     "glove_categories": 0.026428441538009793,
+     "glove_allwords": 0.03793051591375843
+    },
+    "subj08": {
+     "mpnet_captions": 0.08237136396820899,
+     "mpnet_categories": 0.0582960514627673,
+     "mpnet_nouns": 0.06854983395034517,
+     "mpnet_verbs": 0.021997405660200725,
+     "mpnet_allwords": 0.05840216528816166,
+     "multihot": 0.038828754747993556,
+     "fasttext_categories": 0.0460183651841901,
+     "fasttext_allwords": 0.06302001818160836,
+     "glove_categories": 0.04311476118379721,
+     "glove_allwords": 0.05856095789823922
+    }
+   },
+   "as_released": {
+    "mean": {
+     "mpnet_captions": 0.16295730577517908,
+     "mpnet_categories": 0.10912944701902212,
+     "mpnet_nouns": 0.1365996292678747,
+     "mpnet_verbs": 0.047583166927672296,
+     "mpnet_allwords": 0.11349345392533056,
+     "multihot": 0.07371313276955929,
+     "fasttext_categories": 0.08893408836458148,
+     "fasttext_allwords": 0.12222914729927783,
+     "glove_categories": 0.0821205776109259,
+     "glove_allwords": 0.11152282785391408
+    },
+    "sem": {
+     "mpnet_captions": 0.014215862731364184,
+     "mpnet_categories": 0.010319661235235523,
+     "mpnet_nouns": 0.011739222942150232,
+     "mpnet_verbs": 0.003975131565392707,
+     "mpnet_allwords": 0.008637158733845662,
+     "multihot": 0.007965513079961767,
+     "fasttext_categories": 0.00843933039244362,
+     "fasttext_allwords": 0.010231090078554123,
+     "glove_categories": 0.008130894048706825,
+     "glove_allwords": 0.01014126345874574
+    },
+    "one_sample_p": {
+     "mpnet_captions": 8.639889142764816e-06,
+     "mpnet_categories": 1.478274050146106e-05,
+     "mpnet_nouns": 7.81561345883526e-06,
+     "mpnet_verbs": 6.46524814327331e-06,
+     "mpnet_allwords": 3.450312586554009e-06,
+     "multihot": 3.5580506012765646e-05,
+     "fasttext_categories": 1.5129005603392806e-05,
+     "fasttext_allwords": 6.550601697254599e-06,
+     "glove_categories": 2.0037446021015865e-05,
+     "glove_allwords": 1.1397273569092016e-05
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     0.02102305075551922,
+     0.22468000918373568,
+     8.070546630455323e-05,
+     0.022353275217088516,
+     0.000524372732500238,
+     0.002323572996117389,
+     0.06160515315323908,
+     0.0012322837943710585,
+     0.022353275217088516,
+     0.1510010555339863,
+     0.000522150233548037,
+     0.7854218726638648,
+     0.03267311175163076,
+     0.20123426190649726,
+     0.45306986394753107,
+     0.09474031310991082,
+     0.8845034484217351,
+     9.660765837968861e-05,
+     0.18435845207635124,
+     0.002323572996117389,
+     0.01489338586458852,
+     0.45209079681609704,
+     0.006555289992016489,
+     0.18040739526741922,
+     9.660765837968861e-05,
+     0.022353275217088516,
+     0.002323572996117389,
+     9.660765837968861e-05,
+     0.006555289992016489,
+     0.00036669158149381847,
+     0.013311658634072212,
+     0.09524289238764806,
+     0.5758790631752257,
+     0.036045367321521214,
+     0.8845034484217351,
+     0.2634443871175875,
+     0.007036087198592231,
+     0.5313752174962155,
+     0.022353275217088516,
+     0.0449242638545226,
+     0.6109366377811426,
+     0.1581191027880699,
+     0.02102305075551922,
+     0.5313752174962155,
+     0.06689108936979667
+    ],
+    "p_paired_fdr": [
+     1.3859468430406012e-05,
+     6.988321442680052e-05,
+     2.2875243387985845e-05,
+     7.934692298802783e-05,
+     1.3859468430406012e-05,
+     1.3859468430406012e-05,
+     5.042095276956316e-05,
+     1.3859468430406012e-05,
+     2.2875243387985845e-05,
+     2.350121294338917e-05,
+     5.3860236215756336e-05,
+     0.07967895480604388,
+     2.3498014063361506e-05,
+     5.042095276956316e-05,
+     5.270860744783277e-05,
+     2.7945666068954726e-05,
+     0.20685670549325463,
+     2.2875243387985845e-05,
+     0.00027115105886852135,
+     9.840778068240088e-06,
+     1.2108524485053283e-05,
+     9.931406355372621e-05,
+     1.0873931479743885e-05,
+     1.8396797519095588e-05,
+     1.2108524485053283e-05,
+     0.0008274544037795945,
+     6.988321442680052e-05,
+     2.141306370134973e-05,
+     0.0001336119905536075,
+     3.7744944368775904e-05,
+     9.224470438624063e-07,
+     6.008249397473469e-08,
+     0.001654495407755435,
+     6.008249397473469e-08,
+     0.3168823870395439,
+     9.931406355372621e-05,
+     4.777327765529287e-06,
+     0.0008051198721391967,
+     1.2108524485053283e-05,
+     4.721120280616624e-06,
+     2.350121294338917e-05,
+     2.2875243387985845e-05,
+     4.4207756022630456e-06,
+     9.255992894539362e-06,
+     1.2108524485053283e-05
+    ]
+   },
+   "matched_515": {
+    "mean": {
+     "mpnet_captions": 0.2028319885628656,
+     "mpnet_categories": 0.1682247713350879,
+     "mpnet_nouns": 0.1763521584367878,
+     "mpnet_verbs": 0.08337737718157183,
+     "mpnet_allwords": 0.15943049902905815,
+     "multihot": 0.15828900340262203,
+     "fasttext_categories": 0.13556637293650173,
+     "fasttext_allwords": 0.169842635963936,
+     "glove_categories": 0.1421773676488644,
+     "glove_allwords": 0.17103654979127206
+    },
+    "sem": {
+     "mpnet_captions": 0.013857972996000905,
+     "mpnet_categories": 0.010807989519766012,
+     "mpnet_nouns": 0.011326298929314221,
+     "mpnet_verbs": 0.005481828592850358,
+     "mpnet_allwords": 0.009382660842778707,
+     "multihot": 0.011390505253980356,
+     "fasttext_categories": 0.00949907320551323,
+     "fasttext_allwords": 0.00981091960220926,
+     "glove_categories": 0.008611204552743421,
+     "glove_allwords": 0.009864265137970233
+    },
+    "one_sample_p": {
+     "mpnet_captions": 1.660582632058734e-06,
+     "mpnet_categories": 1.0921000537904486e-06,
+     "mpnet_nouns": 1.0895675261291565e-06,
+     "mpnet_verbs": 1.2782801451424605e-06,
+     "mpnet_allwords": 5.993537084403223e-07,
+     "multihot": 2.3620789255412078e-06,
+     "fasttext_categories": 1.9715524733036107e-06,
+     "fasttext_allwords": 5.274882114650682e-07,
+     "glove_categories": 7.296987493488464e-07,
+     "glove_allwords": 5.217950401341295e-07
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     0.14796383313689912,
+     0.2685871998644254,
+     3.226547527550406e-05,
+     0.06873498978844905,
+     0.073999782021303,
+     0.005879967290626256,
+     0.14811984921523524,
+     0.009392376709242214,
+     0.15498371936946692,
+     0.7086474057641714,
+     4.695290518423981e-05,
+     0.6674297909534359,
+     0.6674297909534359,
+     0.09889390864537558,
+     0.9394387380437201,
+     0.15498371936946692,
+     0.9111199189215533,
+     3.836813895858334e-05,
+     0.40603333366044686,
+     0.40603333366044686,
+     0.05763066940178892,
+     0.754435177001332,
+     0.08141068802698692,
+     0.7997694005153729,
+     4.695290518423981e-05,
+     0.0002376736208029022,
+     0.0015273599329204074,
+     3.226547527550406e-05,
+     0.0002776136340117639,
+     3.226547527550406e-05,
+     0.9394387380437201,
+     0.17197414570599784,
+     0.5860629581830694,
+     0.3165372351060766,
+     0.5615207455278027,
+     0.2557956988588192,
+     0.5860629581830694,
+     0.40603333366044686,
+     0.5615207455278027,
+     0.073999782021303,
+     0.7086474057641714,
+     0.06873498978844905,
+     0.1179572735613513,
+     0.9394387380437201,
+     0.10602309587186043
+    ],
+    "p_paired_fdr": [
+     0.0011077531516432745,
+     0.0009224092468567143,
+     0.00015367041813015226,
+     0.0007298054454251281,
+     0.0037122320180620547,
+     0.00018630100218598375,
+     0.0007298054454251281,
+     0.0007298054454251281,
+     0.0012659974324934562,
+     0.05985082586611891,
+     0.00015367041813015226,
+     0.10731423882429407,
+     0.12096223111615552,
+     0.00015367041813015226,
+     0.6604849648225997,
+     0.0017841434286262714,
+     0.49410474370665314,
+     0.00015367041813015226,
+     0.0038002422603723362,
+     0.045554645072519155,
+     0.00015801144198425562,
+     0.07328016630297285,
+     0.0013605014824292507,
+     0.204068054838889,
+     0.00015367041813015226,
+     0.00018442296818188222,
+     0.0006805451913142813,
+     0.00015367041813015226,
+     0.00015367041813015226,
+     0.00015367041813015226,
+     0.8384830413185035,
+     0.0007298054454251281,
+     0.0017841434286262714,
+     0.00324342729140499,
+     0.0011077531516432745,
+     0.0007736125207326443,
+     0.10218865703062101,
+     0.002137750379437733,
+     0.06739798576849106,
+     0.00015367041813015226,
+     0.04439937340397299,
+     0.00018442296818188222,
+     0.0009224092468567143,
+     0.36204772229523774,
+     0.0007298054454251281
+    ]
+   }
+  },
+  "ventral": {
+   "raw": {
+    "subj01": {
+     "mpnet_captions": 0.27103406459093093,
+     "mpnet_categories": 0.1789618044346571,
+     "mpnet_nouns": 0.23659929111599923,
+     "mpnet_verbs": 0.1011980240419507,
+     "mpnet_allwords": 0.18911157920956612,
+     "multihot": 0.15423700243234634,
+     "fasttext_categories": 0.1509755401313305,
+     "fasttext_allwords": 0.208575601875782,
+     "glove_categories": 0.15575816594064235,
+     "glove_allwords": 0.21282709613442422
+    },
+    "subj02": {
+     "mpnet_captions": 0.2623203033208847,
+     "mpnet_categories": 0.1746922867000103,
+     "mpnet_nouns": 0.2339675822854042,
+     "mpnet_verbs": 0.0922957374714315,
+     "mpnet_allwords": 0.18249043695628642,
+     "multihot": 0.14552104897797108,
+     "fasttext_categories": 0.14967049218714237,
+     "fasttext_allwords": 0.2021081578731537,
+     "glove_categories": 0.15176335401833058,
+     "glove_allwords": 0.20924761518836021
+    },
+    "subj03": {
+     "mpnet_captions": 0.267038754397823,
+     "mpnet_categories": 0.18705054757095152,
+     "mpnet_nouns": 0.23676016566253477,
+     "mpnet_verbs": 0.11233911056432032,
+     "mpnet_allwords": 0.18722643895495322,
+     "multihot": 0.17527420890908088,
+     "fasttext_categories": 0.1610027870103236,
+     "fasttext_allwords": 0.20993029109893308,
+     "glove_categories": 0.16829350206159777,
+     "glove_allwords": 0.21571800329031482
+    },
+    "subj04": {
+     "mpnet_captions": 0.2361200338712445,
+     "mpnet_categories": 0.16756655579363858,
+     "mpnet_nouns": 0.21573736546216188,
+     "mpnet_verbs": 0.09149118285212252,
+     "mpnet_allwords": 0.17023952760630184,
+     "multihot": 0.1545297580046786,
+     "fasttext_categories": 0.1427524422329885,
+     "fasttext_allwords": 0.18979479827814633,
+     "glove_categories": 0.14619273250853573,
+     "glove_allwords": 0.1986434335509936
+    },
+    "subj05": {
+     "mpnet_captions": 0.30665780246257784,
+     "mpnet_categories": 0.20867212533950805,
+     "mpnet_nouns": 0.2601278591156006,
+     "mpnet_verbs": 0.11860262222588062,
+     "mpnet_allwords": 0.2053036420047283,
+     "multihot": 0.19247664846479892,
+     "fasttext_categories": 0.17859228722751141,
+     "fasttext_allwords": 0.23496789768338203,
+     "glove_categories": 0.18916939899325372,
+     "glove_allwords": 0.24642329186201095
+    },
+    "subj06": {
+     "mpnet_captions": 0.2376378512670917,
+     "mpnet_categories": 0.1583792572059939,
+     "mpnet_nouns": 0.2072393101069235,
+     "mpnet_verbs": 0.08220344855480137,
+     "mpnet_allwords": 0.15968297433949286,
+     "multihot": 0.12970870120390768,
+     "fasttext_categories": 0.13375278069607674,
+     "fasttext_allwords": 0.1792080157226132,
+     "glove_categories": 0.13427663414228347,
+     "glove_allwords": 0.18071770079193578
+    },
+    "subj07": {
+     "mpnet_captions": 0.22946710303425788,
+     "mpnet_categories": 0.15644848436117173,
+     "mpnet_nouns": 0.1959780015051365,
+     "mpnet_verbs": 0.08557112350128591,
+     "mpnet_allwords": 0.1522393859922886,
+     "multihot": 0.13711035698652269,
+     "fasttext_categories": 0.13237380363047124,
+     "fasttext_allwords": 0.17169191263616085,
+     "glove_categories": 0.13380904011428357,
+     "glove_allwords": 0.17374451369047164
+    },
+    "subj08": {
+     "mpnet_captions": 0.2155279441288224,
+     "mpnet_categories": 0.1467123714586099,
+     "mpnet_nouns": 0.18189437439044318,
+     "mpnet_verbs": 0.08985080031885041,
+     "mpnet_allwords": 0.14161278873130126,
+     "multihot": 0.12397658728339055,
+     "fasttext_categories": 0.12295857678960871,
+     "fasttext_allwords": 0.15914342897357764,
+     "glove_categories": 0.12351343842844169,
+     "glove_allwords": 0.15998840759749766
+    }
+   },
+   "as_released": {
+    "mean": {
+     "mpnet_captions": 0.3499115090215814,
+     "mpnet_categories": 0.23811315817558357,
+     "mpnet_nouns": 0.3052182437023584,
+     "mpnet_verbs": 0.13367275630002645,
+     "mpnet_allwords": 0.23942047312641865,
+     "multihot": 0.2091286321753153,
+     "fasttext_categories": 0.2023455202353347,
+     "fasttext_allwords": 0.26832939846053727,
+     "glove_categories": 0.20739575136002072,
+     "glove_allwords": 0.2752686575785107
+    },
+    "sem": {
+     "mpnet_captions": 0.0063217210699777655,
+     "mpnet_categories": 0.0041833468258637855,
+     "mpnet_nouns": 0.004309328383195352,
+     "mpnet_verbs": 0.004165056449236438,
+     "mpnet_allwords": 0.003917756455270521,
+     "multihot": 0.006716049131063765,
+     "fasttext_categories": 0.003798123904913409,
+     "fasttext_allwords": 0.0048156376450469605,
+     "glove_categories": 0.00520190778517741,
+     "glove_allwords": 0.00583958668051643
+    },
+    "one_sample_p": {
+     "mpnet_captions": 1.6475221412040195e-10,
+     "mpnet_categories": 1.355321482858931e-10,
+     "mpnet_nouns": 2.940930945275474e-11,
+     "mpnet_verbs": 7.373423961381192e-09,
+     "mpnet_allwords": 8.24855873025885e-11,
+     "multihot": 9.09824763809852e-09,
+     "fasttext_categories": 2.151669807359051e-10,
+     "fasttext_allwords": 1.5726464289949107e-10,
+     "glove_categories": 1.626962220686827e-09,
+     "glove_allwords": 5.057113576935103e-10
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     2.38745615507761e-09,
+     6.420936090516363e-05,
+     1.8465207011683814e-12,
+     2.3644836331333886e-09,
+     1.8180628244942309e-09,
+     1.1549379997648301e-10,
+     1.4450062738126613e-07,
+     3.497731526161629e-10,
+     9.902428813179413e-07,
+     6.155317864090475e-08,
+     3.166022599635109e-10,
+     0.8412982797093231,
+     0.0028767818264230265,
+     2.884460862390426e-05,
+     0.0004091498713247871,
+     0.0005001006262409466,
+     0.00019906207079798793,
+     1.8465207011683814e-12,
+     5.682480641871294e-08,
+     2.6835983723036337e-08,
+     3.071729294966559e-10,
+     7.846864058336586e-05,
+     2.8034336024781417e-09,
+     0.0012163615324393528,
+     2.3251134125565684e-10,
+     3.3777182816773015e-07,
+     2.4751242993568372e-08,
+     7.55300681278456e-11,
+     6.590605118340585e-08,
+     1.1549379997648301e-10,
+     0.0018629934406050213,
+     1.3939709353013052e-05,
+     0.00046291139684262065,
+     0.00030004882471875626,
+     0.00022137285488484394,
+     0.42232052753597277,
+     8.052343875392024e-06,
+     0.8412982797093231,
+     5.528817193231178e-06,
+     8.880027167966239e-08,
+     0.46680169680751005,
+     1.188887630335775e-07,
+     1.0578764490782168e-06,
+     0.4113399264427539,
+     9.902428813179413e-07
+    ],
+    "p_paired_fdr": [
+     2.269588288130687e-08,
+     4.987319295598711e-06,
+     1.1341621338684577e-08,
+     5.728682198882279e-08,
+     1.0772467130915808e-07,
+     1.3684716603221677e-08,
+     8.82218624297924e-08,
+     1.3684716603221677e-08,
+     8.141089887572444e-07,
+     7.724179489729037e-08,
+     1.3684716603221677e-08,
+     0.641758456444391,
+     9.133305101464268e-05,
+     1.1341621338684577e-08,
+     3.2461299991383957e-06,
+     6.636718156423454e-07,
+     1.2306699909030383e-05,
+     1.3684716603221677e-08,
+     3.2773321734425092e-09,
+     4.238417543746561e-07,
+     1.1341621338684577e-08,
+     2.6069231338440538e-08,
+     2.120883798715292e-08,
+     8.122896969567676e-06,
+     7.724179489729037e-08,
+     8.086705763128412e-07,
+     9.39739477441384e-08,
+     2.6069231338440538e-08,
+     2.0329054680814237e-07,
+     5.728682198882279e-08,
+     0.0004435242624841297,
+     1.7380797402456566e-06,
+     2.0329054680814237e-07,
+     1.156757850742408e-05,
+     2.6066576009415977e-06,
+     0.0988990752861141,
+     2.4304758025051497e-06,
+     0.5218393205323961,
+     8.141089887572444e-07,
+     2.8519779387233337e-08,
+     0.015948885332074666,
+     1.3238510157318177e-07,
+     2.8519779387233337e-08,
+     0.004675048677613579,
+     3.9570753571004816e-08
+    ]
+   },
+   "matched_515": {
+    "mean": {
+     "mpnet_captions": 0.37946965248944065,
+     "mpnet_categories": 0.28975458076678395,
+     "mpnet_nouns": 0.3288618407839853,
+     "mpnet_verbs": 0.15219103264379413,
+     "mpnet_allwords": 0.2631022278503309,
+     "multihot": 0.27791421636875374,
+     "fasttext_categories": 0.25166937053606564,
+     "fasttext_allwords": 0.29980198497348415,
+     "glove_categories": 0.2659666477090565,
+     "glove_allwords": 0.3122331510737605
+    },
+    "sem": {
+     "mpnet_captions": 0.006079944216743107,
+     "mpnet_categories": 0.0038010993180350432,
+     "mpnet_nouns": 0.003915363725598949,
+     "mpnet_verbs": 0.0049325785269769586,
+     "mpnet_allwords": 0.0046098503419154686,
+     "multihot": 0.007308666872257275,
+     "fasttext_categories": 0.0042551054947050125,
+     "fasttext_allwords": 0.005706395049262721,
+     "glove_categories": 0.0052415914680678495,
+     "glove_allwords": 0.005376027156781761
+    },
+    "one_sample_p": {
+     "mpnet_captions": 7.118806425118758e-11,
+     "mpnet_categories": 1.759141924012254e-11,
+     "mpnet_nouns": 8.927823794490442e-12,
+     "mpnet_verbs": 9.69773758423021e-09,
+     "mpnet_allwords": 1.3298751006612083e-10,
+     "multihot": 2.263296050856807e-09,
+     "fasttext_categories": 1.0366542559823881e-10,
+     "fasttext_allwords": 2.3716153300616085e-10,
+     "glove_categories": 3.023838536151376e-10,
+     "glove_allwords": 1.177202673038089e-10
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     1.7553936768102638e-08,
+     1.2817077596063297e-05,
+     2.3666898866892215e-12,
+     1.8378332828017964e-09,
+     1.1531712430975288e-07,
+     6.062547844704294e-10,
+     4.0954039135104904e-07,
+     4.159972119373849e-09,
+     2.046496077739015e-06,
+     1.0306256899745196e-05,
+     3.4463207279872934e-11,
+     0.0008351232948000096,
+     0.1806392544950331,
+     1.894290239622962e-05,
+     0.17669047045634886,
+     0.0034134900226996914,
+     0.0055505599962254615,
+     2.3666898866892215e-12,
+     9.848381240583607e-08,
+     4.236254189462788e-05,
+     8.149850507555966e-09,
+     0.0012949596907153877,
+     4.021048560260266e-07,
+     0.031815278315464754,
+     9.768024215743224e-10,
+     4.064137586494871e-09,
+     1.8378332828017964e-09,
+     1.2992529386180047e-10,
+     1.4277071664654505e-09,
+     3.4463207279872934e-11,
+     0.12211256779296661,
+     0.10363679269838183,
+     0.0003109700119686431,
+     0.6877558526591118,
+     1.3496590982008342e-05,
+     0.010004592748793503,
+     0.040488040094966586,
+     0.2099597452561735,
+     0.0028394726792253418,
+     1.7140798771832947e-05,
+     0.06226614958009929,
+     1.004791163389692e-06,
+     0.000967193866159997,
+     0.1483327616529828,
+     4.236254189462788e-05
+    ],
+    "p_paired_fdr": [
+     4.406399229598017e-07,
+     4.59342814758172e-06,
+     2.1585282701101954e-08,
+     1.944935514962678e-08,
+     8.206849746268105e-06,
+     2.1585282701101954e-08,
+     2.654272386047273e-08,
+     2.6499846749413684e-07,
+     4.951047696040101e-07,
+     3.5017294067290816e-05,
+     1.944935514962678e-08,
+     0.0006793565373298759,
+     0.07627937047165906,
+     8.37414813334113e-06,
+     0.06274493336771834,
+     0.00011360839415987992,
+     0.00016985162027541664,
+     3.123454972905774e-08,
+     1.944935514962678e-08,
+     0.000382380724185362,
+     1.944935514962678e-08,
+     1.5410920995989864e-05,
+     1.8355052589393761e-06,
+     0.0012028668426916228,
+     1.0964438634530417e-06,
+     4.216863272944125e-08,
+     2.6499846749413684e-07,
+     2.2512351329232825e-07,
+     2.1585282701101954e-08,
+     2.1585282701101954e-08,
+     0.11038389887589023,
+     0.0024277344545285445,
+     1.753157699182178e-07,
+     0.5464330515237771,
+     2.0834437635585245e-06,
+     0.0045138298289570744,
+     0.029592823870983977,
+     0.03915352854507442,
+     0.0008496350184753344,
+     4.6705698253498015e-07,
+     0.0012028668426916228,
+     3.514526689448479e-08,
+     0.0001229398133761473,
+     0.0018069650791283829,
+     1.786474363396872e-07
+    ]
+   }
+  },
+  "lateral": {
+   "raw": {
+    "subj01": {
+     "mpnet_captions": 0.21113330215215684,
+     "mpnet_categories": 0.13583004422485828,
+     "mpnet_nouns": 0.16433731496334075,
+     "mpnet_verbs": 0.08835087820421904,
+     "mpnet_allwords": 0.13849211886525153,
+     "multihot": 0.12472313858568668,
+     "fasttext_categories": 0.10578460771590471,
+     "fasttext_allwords": 0.1519713104516268,
+     "glove_categories": 0.10692849669605493,
+     "glove_allwords": 0.14923536874353885
+    },
+    "subj02": {
+     "mpnet_captions": 0.22411426529288292,
+     "mpnet_categories": 0.14962670534849168,
+     "mpnet_nouns": 0.174584581553936,
+     "mpnet_verbs": 0.09472513053566217,
+     "mpnet_allwords": 0.14576247714459897,
+     "multihot": 0.14621345341205597,
+     "fasttext_categories": 0.11972546488046647,
+     "fasttext_allwords": 0.1627415482699871,
+     "glove_categories": 0.1215494817495346,
+     "glove_allwords": 0.16211122274398804
+    },
+    "subj03": {
+     "mpnet_captions": 0.18619142616948775,
+     "mpnet_categories": 0.12116287780865546,
+     "mpnet_nouns": 0.14612920065560647,
+     "mpnet_verbs": 0.07914339731477442,
+     "mpnet_allwords": 0.12323640214820061,
+     "multihot": 0.11280907726576252,
+     "fasttext_categories": 0.09485486678538783,
+     "fasttext_allwords": 0.1338336470146333,
+     "glove_categories": 0.09774851979267213,
+     "glove_allwords": 0.13101561499699468
+    },
+    "subj04": {
+     "mpnet_captions": 0.19253338169720438,
+     "mpnet_categories": 0.12257160108398509,
+     "mpnet_nouns": 0.13964897725317213,
+     "mpnet_verbs": 0.08062254518046286,
+     "mpnet_allwords": 0.11722482016517057,
+     "multihot": 0.11229920190655523,
+     "fasttext_categories": 0.08911892317485547,
+     "fasttext_allwords": 0.13145167394368737,
+     "glove_categories": 0.08775860080236776,
+     "glove_allwords": 0.12794991403266234
+    },
+    "subj05": {
+     "mpnet_captions": 0.24793340876698494,
+     "mpnet_categories": 0.16201382711529733,
+     "mpnet_nouns": 0.18440508790314197,
+     "mpnet_verbs": 0.10222863756120205,
+     "mpnet_allwords": 0.1527141422778368,
+     "multihot": 0.15238080345094204,
+     "fasttext_categories": 0.1267663275077939,
+     "fasttext_allwords": 0.17332364231348038,
+     "glove_categories": 0.13113392520695924,
+     "glove_allwords": 0.17152456365525723
+    },
+    "subj06": {
+     "mpnet_captions": 0.14028452048378606,
+     "mpnet_categories": 0.09304116510095135,
+     "mpnet_nouns": 0.10543469844325896,
+     "mpnet_verbs": 0.05688328034574947,
+     "mpnet_allwords": 0.0880566695104203,
+     "multihot": 0.09090762999990294,
+     "fasttext_categories": 0.07293948783509192,
+     "fasttext_allwords": 0.10057731591645748,
+     "glove_categories": 0.07451723224573559,
+     "glove_allwords": 0.0964737836752207
+    },
+    "subj07": {
+     "mpnet_captions": 0.2265414947271347,
+     "mpnet_categories": 0.15415712095797063,
+     "mpnet_nouns": 0.1694537427276373,
+     "mpnet_verbs": 0.09330499099567532,
+     "mpnet_allwords": 0.14428144320845604,
+     "multihot": 0.1352458170801401,
+     "fasttext_categories": 0.12171100977808237,
+     "fasttext_allwords": 0.1630671052634716,
+     "glove_categories": 0.12285654183477163,
+     "glove_allwords": 0.15867753937840462
+    },
+    "subj08": {
+     "mpnet_captions": 0.10005870447666557,
+     "mpnet_categories": 0.06625174937976731,
+     "mpnet_nouns": 0.07963009483905302,
+     "mpnet_verbs": 0.04075419373327383,
+     "mpnet_allwords": 0.064077229514994,
+     "multihot": 0.06487570415009503,
+     "fasttext_categories": 0.05142198597874354,
+     "fasttext_allwords": 0.07308235695516621,
+     "glove_categories": 0.0524191769568629,
+     "glove_allwords": 0.07054996190385686
+    }
+   },
+   "as_released": {
+    "mean": {
+     "mpnet_captions": 0.40350466094814824,
+     "mpnet_categories": 0.2654555378767738,
+     "mpnet_nouns": 0.3079374221600041,
+     "mpnet_verbs": 0.16747903647467832,
+     "mpnet_allwords": 0.2571273626395844,
+     "multihot": 0.24910788221687769,
+     "fasttext_categories": 0.20666429385293017,
+     "fasttext_allwords": 0.2882931713556872,
+     "glove_categories": 0.21004168227342096,
+     "glove_allwords": 0.28169695219824953
+    },
+    "sem": {
+     "mpnet_captions": 0.010551700354132824,
+     "mpnet_categories": 0.008635900279558564,
+     "mpnet_nouns": 0.008207800383632101,
+     "mpnet_verbs": 0.0040784872754706806,
+     "mpnet_allwords": 0.007131218441235993,
+     "multihot": 0.007090045613714603,
+     "fasttext_categories": 0.007905559544255269,
+     "fasttext_allwords": 0.008347762712738871,
+     "glove_categories": 0.008411577429663216,
+     "glove_allwords": 0.008092385982600332
+    },
+    "one_sample_p": {
+     "mpnet_captions": 2.1759050537976423e-09,
+     "mpnet_categories": 9.954335203249417e-09,
+     "mpnet_nouns": 2.485549353095795e-09,
+     "mpnet_verbs": 1.3241839361858192e-09,
+     "mpnet_allwords": 3.278140063394411e-09,
+     "multihot": 3.926139225132294e-09,
+     "fasttext_categories": 3.066722412874353e-08,
+     "fasttext_allwords": 4.426068835283784e-09,
+     "glove_categories": 4.213987598168881e-08,
+     "glove_allwords": 4.1884471920078424e-09
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     3.2777292952422886e-07,
+     1.308590235292959e-05,
+     2.7251860876260777e-10,
+     9.131586269240716e-08,
+     5.151369885162483e-08,
+     8.125356079507344e-09,
+     1.8451720557678304e-06,
+     1.0399607516859694e-08,
+     9.476077489662695e-07,
+     0.004355119701428595,
+     3.0606312768582473e-07,
+     0.4912434934990486,
+     0.18622668855660945,
+     0.00036572902709826403,
+     0.09240736795606698,
+     0.0007185291233620322,
+     0.21023672276037123,
+     8.125356079507344e-09,
+     0.0006462887611891937,
+     0.00018336451033632516,
+     1.2684085134697834e-06,
+     0.13329387160228212,
+     2.3993544640155996e-06,
+     0.047485915723325424,
+     1.567086854359411e-07,
+     3.5918833103800945e-07,
+     0.0009626980381935566,
+     2.982623145704723e-08,
+     0.0007517956542696885,
+     3.725575359328829e-08,
+     0.46980871063123547,
+     0.0005934157493696702,
+     0.0168948395950321,
+     0.0012068284073298069,
+     0.047485915723325424,
+     0.001986164062270241,
+     0.004355119701428595,
+     0.004355119701428595,
+     0.0119349805640796,
+     1.3343284251979269e-05,
+     0.7741352894494862,
+     2.6626059286488542e-05,
+     2.6626059286488542e-05,
+     0.5926297129481224,
+     5.499811699537506e-05
+    ],
+    "p_paired_fdr": [
+     3.266985833421257e-09,
+     2.884523580630601e-07,
+     1.627591713938717e-08,
+     2.9153878465445016e-08,
+     8.50485706525388e-08,
+     3.266985833421257e-09,
+     1.627591713938717e-08,
+     3.903199217369662e-09,
+     1.894021585578291e-08,
+     6.038309693315377e-06,
+     3.627874399446387e-07,
+     0.03660527637177763,
+     0.004753961125695362,
+     2.1920946518225214e-08,
+     3.931082737781084e-06,
+     1.6156353580350063e-07,
+     0.00012793107900916154,
+     4.6117170172074356e-08,
+     9.995088004712082e-08,
+     3.2992978556736485e-06,
+     1.627591713938717e-08,
+     1.8528463808521184e-05,
+     1.894021585578291e-08,
+     4.769788392638811e-06,
+     8.50485706525388e-08,
+     1.0768739277919095e-06,
+     5.1710934323562716e-05,
+     8.50485706525388e-08,
+     6.918589247817613e-05,
+     8.285112051870318e-08,
+     0.11777513626586879,
+     3.627874399446387e-07,
+     2.6630318210907154e-06,
+     1.6269460209834301e-06,
+     5.134512697479416e-06,
+     3.4151063602873177e-06,
+     2.0966052491943672e-05,
+     6.038309693315377e-06,
+     8.112751098703458e-05,
+     3.266985833421257e-09,
+     0.016671196341891806,
+     3.266985833421257e-09,
+     1.3705303799257419e-08,
+     0.0013701704941962393,
+     1.3705303799257419e-08
+    ]
+   },
+   "matched_515": {
+    "mean": {
+     "mpnet_captions": 0.44566457044643915,
+     "mpnet_categories": 0.2947273543163029,
+     "mpnet_nouns": 0.30800203685188654,
+     "mpnet_verbs": 0.13482507045207173,
+     "mpnet_allwords": 0.26504996200572695,
+     "multihot": 0.26249011663892824,
+     "fasttext_categories": 0.2043549918564834,
+     "fasttext_allwords": 0.29433213657016355,
+     "glove_categories": 0.2084803257563021,
+     "glove_allwords": 0.27551271196915295
+    },
+    "sem": {
+     "mpnet_captions": 0.013209657718108501,
+     "mpnet_categories": 0.012010972071648205,
+     "mpnet_nouns": 0.012298343833573424,
+     "mpnet_verbs": 0.008378656801363066,
+     "mpnet_allwords": 0.00960542429648125,
+     "multihot": 0.008862696153041166,
+     "fasttext_categories": 0.01267281713297122,
+     "fasttext_allwords": 0.012536663943870565,
+     "glove_categories": 0.012375192042582596,
+     "glove_allwords": 0.011081086245540226
+    },
+    "one_sample_p": {
+     "mpnet_captions": 5.208048390580032e-09,
+     "mpnet_categories": 4.7562013893802705e-08,
+     "mpnet_nouns": 4.128848460261173e-08,
+     "mpnet_verbs": 8.700624183043317e-07,
+     "mpnet_allwords": 2.1073220773780426e-08,
+     "multihot": 1.2888588398178181e-08,
+     "fasttext_categories": 8.576090992484217e-07,
+     "fasttext_allwords": 6.458510830842837e-08,
+     "glove_categories": 6.357031997485088e-07,
+     "glove_allwords": 4.3415491805647887e-08
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     2.4786628565152468e-06,
+     7.125693634005758e-06,
+     5.282224423701314e-10,
+     1.9876611865143859e-07,
+     1.4267333104540113e-07,
+     4.500262213515581e-08,
+     2.821238464841775e-06,
+     4.500262213515581e-08,
+     4.126291449322801e-07,
+     0.49700716185982413,
+     2.0003431631664933e-07,
+     0.09535388623133434,
+     0.0683881300505581,
+     0.00035166001838157323,
+     0.9821600607973735,
+     0.00043675198703421275,
+     0.31534515181971784,
+     1.4267333104540113e-07,
+     0.022600552174382824,
+     0.01426225110443508,
+     0.00011474669472301611,
+     0.49700716185982413,
+     0.00014412585439917502,
+     0.09248705946508244,
+     3.2210066619960055e-07,
+     2.6443483264276036e-07,
+     0.0008436152939186952,
+     2.6076122814321693e-07,
+     0.0004760846374919675,
+     3.2672491502919394e-07,
+     0.8667929458565876,
+     0.0032657299723938267,
+     0.106142969289545,
+     0.004556950902201107,
+     0.5220892179390741,
+     0.003523679490910773,
+     0.07773619757922655,
+     0.004984081989715561,
+     0.4318603951155682,
+     0.0004219043850146427,
+     0.8573120813549914,
+     0.0015845253346217717,
+     0.000503484634791152,
+     0.3311121566919478,
+     0.0022103700537724046
+    ],
+    "p_paired_fdr": [
+     3.080127965464488e-08,
+     1.2537613864516318e-07,
+     6.631282983720162e-08,
+     9.242481284230798e-09,
+     5.610087982826251e-07,
+     1.8771921926933485e-08,
+     2.984457578816807e-10,
+     1.8771921926933485e-08,
+     8.231185759137795e-09,
+     0.03599123408415319,
+     5.527025361420986e-07,
+     0.00016906339654577772,
+     0.00103101744309497,
+     3.656161782856025e-07,
+     0.9020989886365354,
+     3.656161782856025e-07,
+     2.7003193217352205e-05,
+     3.8925377356936363e-07,
+     3.246430349587324e-05,
+     0.0015000561758204472,
+     5.717396123569258e-07,
+     0.0192414320892917,
+     3.8925377356936363e-07,
+     0.00026875487461807947,
+     1.0937275138017973e-06,
+     3.8925377356936363e-07,
+     9.949558694200133e-05,
+     1.221774492842984e-06,
+     4.5671574814966774e-05,
+     9.022602537886232e-07,
+     0.7298926187518666,
+     1.5240133888041748e-05,
+     4.452344037138836e-05,
+     1.4923803365649989e-05,
+     0.005271863410804351,
+     0.00011075491071274296,
+     0.006201350406970347,
+     0.0001346031850972277,
+     0.06521543524462559,
+     8.635123821953456e-07,
+     0.0113878497927583,
+     1.1273720672402077e-06,
+     8.635123821953456e-07,
+     0.00010842429062145255,
+     1.1429977740454724e-06
+    ]
+   }
+  },
+  "parietal": {
+   "raw": {
+    "subj01": {
+     "mpnet_captions": 0.1553051245212555,
+     "mpnet_categories": 0.10112138893455266,
+     "mpnet_nouns": 0.1320659713447094,
+     "mpnet_verbs": 0.05104331631446257,
+     "mpnet_allwords": 0.11202368531376124,
+     "multihot": 0.0735431051813066,
+     "fasttext_categories": 0.07958842888474464,
+     "fasttext_allwords": 0.1178973450139165,
+     "glove_categories": 0.08024870038032532,
+     "glove_allwords": 0.11705569941550494
+    },
+    "subj02": {
+     "mpnet_captions": 0.1640785603225231,
+     "mpnet_categories": 0.10940390769392253,
+     "mpnet_nouns": 0.13830245286226273,
+     "mpnet_verbs": 0.057153756376355884,
+     "mpnet_allwords": 0.11508992061018944,
+     "multihot": 0.0882867480814457,
+     "fasttext_categories": 0.08976361695677042,
+     "fasttext_allwords": 0.12333339929580689,
+     "glove_categories": 0.08876528576016426,
+     "glove_allwords": 0.12503252301365136
+    },
+    "subj03": {
+     "mpnet_captions": 0.13055118521855724,
+     "mpnet_categories": 0.09316535203927948,
+     "mpnet_nouns": 0.11604978384510163,
+     "mpnet_verbs": 0.04714819079550404,
+     "mpnet_allwords": 0.09345550624833952,
+     "multihot": 0.07059912867243251,
+     "fasttext_categories": 0.07306725015082667,
+     "fasttext_allwords": 0.10070991215686645,
+     "glove_categories": 0.07467593862524917,
+     "glove_allwords": 0.10149119025276553
+    },
+    "subj04": {
+     "mpnet_captions": 0.11446968438448729,
+     "mpnet_categories": 0.07889431549443139,
+     "mpnet_nouns": 0.09651547001191864,
+     "mpnet_verbs": 0.041426138805777384,
+     "mpnet_allwords": 0.07930251383395107,
+     "multihot": 0.06368075541427566,
+     "fasttext_categories": 0.061274364529203415,
+     "fasttext_allwords": 0.08647721238365327,
+     "glove_categories": 0.06304535070106525,
+     "glove_allwords": 0.09040132271884768
+    },
+    "subj05": {
+     "mpnet_captions": 0.1783015951514244,
+     "mpnet_categories": 0.11597892325371503,
+     "mpnet_nouns": 0.1598638564348221,
+     "mpnet_verbs": 0.055175537317991255,
+     "mpnet_allwords": 0.12499846212565899,
+     "multihot": 0.09240914205089211,
+     "fasttext_categories": 0.09388702977448701,
+     "fasttext_allwords": 0.13637091048061847,
+     "glove_categories": 0.09573413688689471,
+     "glove_allwords": 0.14124254018068313
+    },
+    "subj06": {
+     "mpnet_captions": 0.13837023944624008,
+     "mpnet_categories": 0.08993568319466806,
+     "mpnet_nouns": 0.12089791124866854,
+     "mpnet_verbs": 0.03702794246360539,
+     "mpnet_allwords": 0.09777770299584634,
+     "multihot": 0.059979305151970155,
+     "fasttext_categories": 0.0693355506105769,
+     "fasttext_allwords": 0.10342483252527253,
+     "glove_categories": 0.06813544401478383,
+     "glove_allwords": 0.09981495917083756
+    },
+    "subj07": {
+     "mpnet_captions": 0.12684895411133768,
+     "mpnet_categories": 0.08156073644757271,
+     "mpnet_nouns": 0.10048763014376164,
+     "mpnet_verbs": 0.04480790947098285,
+     "mpnet_allwords": 0.08658350914716721,
+     "multihot": 0.06818752087652684,
+     "fasttext_categories": 0.06576745784841478,
+     "fasttext_allwords": 0.09367981061339378,
+     "glove_categories": 0.06473680549766868,
+     "glove_allwords": 0.09236888850107788
+    },
+    "subj08": {
+     "mpnet_captions": 0.06853248787336741,
+     "mpnet_categories": 0.053879936449919584,
+     "mpnet_nouns": 0.058821623386056336,
+     "mpnet_verbs": 0.0251879149582237,
+     "mpnet_allwords": 0.04644787769454221,
+     "multihot": 0.03423987188445473,
+     "fasttext_categories": 0.037573133321496206,
+     "fasttext_allwords": 0.05151309988771876,
+     "glove_categories": 0.038561796878369664,
+     "glove_allwords": 0.0512738518451375
+    }
+   },
+   "as_released": {
+    "mean": {
+     "mpnet_captions": 0.3582933660256028,
+     "mpnet_categories": 0.24371240983727327,
+     "mpnet_nouns": 0.3062740972828616,
+     "mpnet_verbs": 0.12066624579569993,
+     "mpnet_allwords": 0.25074213901372444,
+     "multihot": 0.18336533457371795,
+     "fasttext_categories": 0.190117989563401,
+     "fasttext_allwords": 0.2703891273745327,
+     "glove_categories": 0.19148754519416789,
+     "glove_allwords": 0.2715938431013979
+    },
+    "sem": {
+     "mpnet_captions": 0.007644642750472235,
+     "mpnet_categories": 0.005898608849939673,
+     "mpnet_nouns": 0.005439674409864133,
+     "mpnet_verbs": 0.00455904613792409,
+     "mpnet_allwords": 0.005389120296473159,
+     "multihot": 0.006039219015687242,
+     "fasttext_categories": 0.0035970633680244045,
+     "fasttext_allwords": 0.004944643816888492,
+     "glove_categories": 0.0032144166911787222,
+     "glove_allwords": 0.0037429946728534513
+    },
+    "one_sample_p": {
+     "mpnet_captions": 5.263871663224135e-10,
+     "mpnet_categories": 1.2686726311816658e-09,
+     "mpnet_nouns": 1.4622896489983e-10,
+     "mpnet_verbs": 2.8142126187993327e-08,
+     "mpnet_allwords": 5.539199411816649e-10,
+     "multihot": 1.0844224907778365e-08,
+     "fasttext_categories": 2.2744049202867933e-10,
+     "fasttext_allwords": 1.7932317344385865e-10,
+     "glove_categories": 9.859255614015918e-11,
+     "glove_allwords": 2.4835620635221887e-11
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     2.4290008223551546e-08,
+     9.566516966487353e-05,
+     5.593114762393499e-12,
+     3.458858657456733e-08,
+     2.3070918688690523e-10,
+     8.599013563537489e-11,
+     2.7004224681737467e-07,
+     8.599013563537489e-11,
+     1.4542821294331346e-07,
+     2.8399593855181126e-06,
+     5.839567862976316e-10,
+     0.4121130514227077,
+     6.745253287899159e-06,
+     2.8399593855181126e-06,
+     0.004480206778037982,
+     2.8399593855181126e-06,
+     0.0016288856490966693,
+     5.593114762393499e-12,
+     5.9190646168366375e-06,
+     1.4697000924016138e-09,
+     2.3138975416064449e-10,
+     0.00030314785458898815,
+     2.21706095777888e-10,
+     0.00015732329335653138,
+     2.0917206948201297e-10,
+     1.4587427641723776e-06,
+     2.3133404422419433e-08,
+     2.818498562883232e-11,
+     1.1969149322400568e-08,
+     5.593114762393499e-12,
+     1.4331043941267375e-06,
+     3.661027476837708e-07,
+     0.019942245685742228,
+     3.403239779771692e-07,
+     0.0077409845862098986,
+     0.37824616296487307,
+     4.8866614487901347e-08,
+     0.27976456647313264,
+     1.5053835623748694e-08,
+     8.237144818626763e-09,
+     0.7983825389632222,
+     9.662651866859911e-10,
+     6.866397859919889e-09,
+     0.8487631265935414,
+     6.664548228741322e-10
+    ],
+    "p_paired_fdr": [
+     2.1120503456863214e-06,
+     2.4254866229956293e-05,
+     7.672805282368173e-08,
+     7.672805282368173e-08,
+     1.5743109877637495e-07,
+     7.672805282368173e-08,
+     9.598610908320919e-08,
+     1.4985357616694422e-07,
+     1.034868081908814e-06,
+     4.428605331600465e-05,
+     1.5743109877637495e-07,
+     0.3562617533568743,
+     8.909590775322456e-05,
+     8.74310172975793e-06,
+     0.003578423488065268,
+     7.005535070756661e-06,
+     0.0036236020973087328,
+     1.5773404875068424e-07,
+     9.391118565407077e-07,
+     2.0092310818632457e-06,
+     1.504224198531928e-07,
+     1.1482251668275686e-05,
+     2.606692619577738e-07,
+     9.071266052330015e-05,
+     4.656406396169475e-07,
+     8.238101189901348e-07,
+     3.488046919740096e-07,
+     1.4174627510235167e-07,
+     1.504224198531928e-07,
+     7.672805282368173e-08,
+     2.5379981783223698e-05,
+     2.1120503456863214e-06,
+     3.241441631879219e-06,
+     8.74310172975793e-06,
+     0.0004432746074724031,
+     0.15422105255844512,
+     2.1120503456863214e-06,
+     0.09970454221278878,
+     2.829301669626447e-07,
+     1.4174627510235167e-07,
+     0.3504425151703045,
+     7.672805282368173e-08,
+     4.656406396169475e-07,
+     0.6462245000319078,
+     1.3937809596136934e-07
+    ]
+   },
+   "matched_515": {
+    "mean": {
+     "mpnet_captions": 0.40061053066199565,
+     "mpnet_categories": 0.33223022326872104,
+     "mpnet_nouns": 0.3508497144700649,
+     "mpnet_verbs": 0.1540737229129741,
+     "mpnet_allwords": 0.2832807920813534,
+     "multihot": 0.27744768078805637,
+     "fasttext_categories": 0.24729535660388535,
+     "fasttext_allwords": 0.3169009124126727,
+     "glove_categories": 0.2688622104686573,
+     "glove_allwords": 0.3302164080322397
+    },
+    "sem": {
+     "mpnet_captions": 0.010531059249554216,
+     "mpnet_categories": 0.012884625826661533,
+     "mpnet_nouns": 0.008359833056592176,
+     "mpnet_verbs": 0.012474603543531476,
+     "mpnet_allwords": 0.009985570971482255,
+     "multihot": 0.015935391977366483,
+     "fasttext_categories": 0.007840576140475739,
+     "fasttext_allwords": 0.01141967330684971,
+     "glove_categories": 0.009755213627985577,
+     "glove_allwords": 0.011598989730752553
+    },
+    "one_sample_p": {
+     "mpnet_captions": 2.2568501689873335e-09,
+     "mpnet_categories": 3.3732724459931664e-08,
+     "mpnet_nouns": 1.137499619729233e-09,
+     "mpnet_verbs": 5.238596178070619e-06,
+     "mpnet_allwords": 1.7384550936045547e-08,
+     "multihot": 5.072171751686362e-07,
+     "fasttext_categories": 8.32193892948159e-09,
+     "fasttext_allwords": 2.0260921996050206e-08,
+     "glove_categories": 2.124853483988462e-08,
+     "glove_allwords": 1.6963118779717484e-08
+    },
+    "pairs": [
+     [
+      "mpnet_captions",
+      "mpnet_categories"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_captions",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "multihot"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_captions",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_captions",
+      "glove_categories"
+     ],
+     [
+      "mpnet_captions",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_nouns"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_categories",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "multihot"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_categories",
+      "glove_categories"
+     ],
+     [
+      "mpnet_categories",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_verbs"
+     ],
+     [
+      "mpnet_nouns",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "multihot"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_categories"
+     ],
+     [
+      "mpnet_nouns",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "mpnet_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "multihot"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_categories"
+     ],
+     [
+      "mpnet_verbs",
+      "glove_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "multihot"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "fasttext_allwords"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_categories"
+     ],
+     [
+      "mpnet_allwords",
+      "glove_allwords"
+     ],
+     [
+      "multihot",
+      "fasttext_categories"
+     ],
+     [
+      "multihot",
+      "fasttext_allwords"
+     ],
+     [
+      "multihot",
+      "glove_categories"
+     ],
+     [
+      "multihot",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "fasttext_allwords"
+     ],
+     [
+      "fasttext_categories",
+      "glove_categories"
+     ],
+     [
+      "fasttext_categories",
+      "glove_allwords"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_categories"
+     ],
+     [
+      "fasttext_allwords",
+      "glove_allwords"
+     ],
+     [
+      "glove_categories",
+      "glove_allwords"
+     ]
+    ],
+    "p_unpaired_fdr": [
+     0.0021740822275876197,
+     0.004107758757281781,
+     2.0948344589294533e-08,
+     5.4503820960599545e-06,
+     5.7284273918391966e-05,
+     1.9890720776226245e-07,
+     0.00023883607516891328,
+     1.7191687576247565e-06,
+     0.001083537294467482,
+     0.2832308730302613,
+     9.125419903691063e-07,
+     0.014738299967680283,
+     0.025570121847089913,
+     0.0001639448628367254,
+     0.42620036734362027,
+     0.0027662096113015653,
+     0.9091745897222672,
+     6.748513297824607e-08,
+     0.0003255728436123537,
+     0.0022058835973487075,
+     1.8184141506044598e-06,
+     0.042193277143771635,
+     5.9039155158892206e-05,
+     0.2024840943416796,
+     5.4503820960599545e-06,
+     8.279241560589336e-05,
+     6.007197484147581e-05,
+     1.1185056450064646e-06,
+     1.731790534785707e-05,
+     6.928505088637614e-07,
+     0.7782883828870214,
+     0.01987657935805057,
+     0.05789751826266915,
+     0.3590781245675315,
+     0.013449550228766217,
+     0.13579736611327473,
+     0.08205862299644824,
+     0.6832956636947983,
+     0.025570121847089913,
+     0.00041794787610148986,
+     0.13356902473824872,
+     0.00010458400574352115,
+     0.010732679405973045,
+     0.4575363925151356,
+     0.0022451998052332766
+    ],
+    "p_paired_fdr": [
+     0.00919164695019681,
+     0.0014572081713821864,
+     6.56301694459701e-06,
+     1.6952606114127147e-06,
+     0.000906512116795609,
+     6.495266231615381e-06,
+     6.56301694459701e-06,
+     5.517429727905023e-05,
+     0.0007173531177427919,
+     0.26735202969214505,
+     6.56301694459701e-06,
+     0.043984332463871796,
+     0.00013914227785767226,
+     0.0007153260392245374,
+     0.4301281736220592,
+     0.003101054299002766,
+     0.8701260369825919,
+     6.56301694459701e-06,
+     5.567449584419925e-05,
+     0.0033142859572125732,
+     1.471215717116409e-06,
+     0.0031707723614318724,
+     0.0001681526822275901,
+     0.043984332463871796,
+     0.00018947986476372622,
+     1.716513812671678e-05,
+     5.30843196784508e-05,
+     3.590609380258667e-05,
+     1.116687675881839e-06,
+     3.2276102912500708e-06,
+     0.7999935893636078,
+     0.006128946798620635,
+     0.0001946129985351489,
+     0.31532893816986657,
+     0.003741484164986275,
+     0.07302531600487067,
+     0.0797299698222048,
+     0.5262636424610087,
+     0.0042791441530197144,
+     0.0001681526822275901,
+     0.00919164695019681,
+     3.9996475768584205e-05,
+     0.006128946798620635,
+     0.12385618308158251,
+     0.00040078099654491614
+    ]
+   }
+  }
+ }
+}
