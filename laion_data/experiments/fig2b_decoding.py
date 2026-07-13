@@ -44,6 +44,30 @@ from src.revision import gcc as GCC
 from src.revision import nsd_data, ridge, roi, stimuli
 
 
+def _retrieve(Pz: np.ndarray, dict_emb, chunk: int = 400_000) -> np.ndarray:
+    """argmax over the dictionary of the correlation between each predicted embedding and
+    every caption embedding. Streams the dictionary; never materialises it in float32."""
+    import torch
+
+    dev = ridge.DEVICE
+    Q = torch.as_tensor(Pz, device=dev, dtype=torch.float32)          # (515, 768), unit rows
+    best_val = torch.full((Q.shape[0],), -2.0, device=dev)
+    best_idx = torch.zeros(Q.shape[0], dtype=torch.long, device=dev)
+
+    for a in range(0, dict_emb.shape[0], chunk):
+        b = min(a + chunk, dict_emb.shape[0])
+        Dc = torch.as_tensor(np.asarray(dict_emb[a:b]), device=dev, dtype=torch.float32)
+        Dc = Dc - Dc.mean(1, keepdim=True)
+        Dc = Dc / Dc.norm(dim=1, keepdim=True).clamp_min(1e-8)
+        sims = Q @ Dc.T                                                # (515, chunk)
+        val, idx = sims.max(1)
+        upd = val > best_val
+        best_val = torch.where(upd, val, best_val)
+        best_idx = torch.where(upd, idx + a, best_idx)
+        del Dc, sims
+    return best_idx.cpu().numpy()
+
+
 def caption_noise_ceiling(caption_emb_per_image: list[np.ndarray]) -> tuple[float, float]:
     """(correct_mean, as_released_buggy) leave-one-caption-out ceiling."""
     correct, buggy = [], []
@@ -63,10 +87,7 @@ def main() -> None:
     mask = roi.streams_mask()
     vis = mask != 0  # 'allvisROIs' — every non-zero streams label
 
-    dict_emb, dict_caps = GCC.build()
-    D = np.asarray(dict_emb, dtype=np.float32)
-    Dz = (D - D.mean(1, keepdims=True))
-    Dz /= np.linalg.norm(Dz, axis=1, keepdims=True) + 1e-8
+    dict_emb, dict_caps = GCC.build()   # (3.3M, 768) fp16, memory-mapped
 
     c515 = nsd_data.get_conditions_515()
     raw_caps = stimuli.load_captions()
@@ -100,9 +121,13 @@ def main() -> None:
         r = (P * T).sum(1) / (np.linalg.norm(P, axis=1) * np.linalg.norm(T, axis=1))
         per_subj_r[subj] = r
 
-        # retrieval against the GCC dictionary (correlation == cosine after row-centring)
+        # Retrieval against the 3.3M-caption GCC dictionary.
+        # Streamed through the GPU in chunks: materialising the dictionary as float32 and
+        # then centring it costs ~20 GB of transient and was OOM-killed. Correlation
+        # distance == cosine after row-centring, so we centre and normalise each chunk on
+        # the fly and keep a running argmax.
         Pz = P / (np.linalg.norm(P, axis=1, keepdims=True) + 1e-8)
-        win = (Pz @ Dz.T).argmax(1)
+        win = _retrieve(Pz, dict_emb)
         examples[subj] = [
             {"nsd_id": int(c515[i]), "true": raw_caps[c515[i]][0], "decoded": dict_caps[win[i]]}
             for i in (0, 100, 250, 450)

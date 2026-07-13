@@ -1,0 +1,201 @@
+{
+ "mean_r": 0.6067327260971069,
+ "kde_mass_5_95": [
+  0.3978275954723358,
+  0.7727461457252502
+ ],
+ "paper_axis": [
+  0.3,
+  0.7
+ ],
+ "caption_noise_ceiling_correct": 0.7528390026304713,
+ "caption_noise_ceiling_as_released_buggy": 0.7531130400676171,
+ "per_subject_mean": {
+  "subj01": 0.6288534998893738,
+  "subj02": 0.6182080507278442,
+  "subj03": 0.5899325013160706,
+  "subj04": 0.5921313166618347,
+  "subj05": 0.6429083347320557,
+  "subj06": 0.617264986038208,
+  "subj07": 0.6166253685951233,
+  "subj08": 0.5479375123977661
+ },
+ "examples": {
+  "subj01": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person on beach with a surfboard ."
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "a detail of living room ."
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "in this photo , vehicles are parked ."
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "person in the snow with person"
+   }
+  ],
+  "subj02": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person surfing on a surf board ."
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "bathroom in a home , showing the toilet and some plants ."
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "one of the vehicles on display ."
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "person riding person during event"
+   }
+  ],
+  "subj03": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person on sport by a glacier"
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "living room with furnishings in a modern house ."
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "a double decker bus in front"
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "person is shown with person ."
+   }
+  ],
+  "subj04": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person in action in sport"
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "a detail of living room ."
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "the motor vehicles are now present"
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "pictured are people , with person"
+   }
+  ],
+  "subj05": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person surfing on a surf board ."
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "a white dining room , spotted walls , small dining table in the kitchen"
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "a train on a road ."
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "people with some of animal ."
+   }
+  ],
+  "subj06": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person surfing on a surf board ."
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "the couch , coffee table and view of the kitchen"
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "a double decker bus in front"
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "pictured are people , with person"
+   }
+  ],
+  "subj07": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person surfing on a surf board ."
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "living room with furnishings in a modern house ."
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "set of various vehicles including bus , car , truck on the white background ."
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "animal in the snow by person"
+   }
+  ],
+  "subj08": [
+   {
+    "nsd_id": 3049,
+    "true": "A person in a wetsuit surfing on a turquoise wave.",
+    "decoded": "person on sport by a glacier"
+   },
+   {
+    "nsd_id": 16616,
+    "true": "a coach and a table in a home living room",
+    "decoded": "one of the room 's living area"
+   },
+   {
+    "nsd_id": 38297,
+    "true": "There are two red double decker buses in a road.",
+    "decoded": "a scene of transit vehicle type"
+   },
+   {
+    "nsd_id": 65069,
+    "true": "A man on skis next to a small child",
+    "decoded": "pictured are people , with person"
+   }
+  ]
+ }
+}
