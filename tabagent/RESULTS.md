@@ -27,6 +27,11 @@ released checkpoint to them, and win on a real benchmark.
   names, and only the tasks' *validation* rows) / **TEST 24** (never seen; scored once).
 - **Control**: `random` draws the same number of priors from the same knob space with the
   same GPU seconds. The only difference is whether an LLM proposes them.
+- **Protocol, frozen in code before any result existed**: DEV/TEST split interleaved by task
+  size; the agent sees anonymised summary statistics of DEV tasks only — never a row, never a
+  task name. TEST is scored once. Significance is a paired difference per (task, seed),
+  bootstrap 95% CI + Wilcoxon (`sig.py`). `adult` and other tables GPT-class models have
+  memorised verbatim (Bordt et al. 2024) are excluded from anything the agent can see.
 
 ## 1. The prior really is nothing like real data
 
@@ -115,7 +120,18 @@ priors work; Real-TabPFN found real data helps; Mitra argued diversity beats fid
 result sides with diversity — and, unlike those, it *measures* the realism gap (C2ST) and
 then shows closing it is harmful.
 
-## 5. What we have not shown
+## 5. Two more things the sweeps established
+
+- **The agent finds the realism axes unprompted.** Shown only anonymised summary statistics of
+  DEV tasks — never a row, never a task name — it proposed `max_features 100→50`,
+  `cat_prob 0.2→0.35`, `replay_small 0→1`, `max_classes 10→2`. The real answers were 22
+  features, 39.5% categorical-like columns, small tables, binary. It diagnoses the gap
+  correctly; §3 is the finding that closing it does not pay.
+- **Full fine-tuning is not the missing ingredient.** It moves DEV more than LoRA
+  (+0.0042 vs +0.0002) and none of it transfers to TEST (−0.0017). The extra capacity buys DEV
+  overfitting, not a better prior. See `sweep_full.py`.
+
+## 6. What we have not shown
 
 - One backbone (TabICL), one adapter family (LoRA on the ICL transformer's FFN). TabPFN v2
   may behave differently; its prior is differently constructed.
@@ -129,7 +145,7 @@ then shows closing it is harmful.
   overfit them; ours is too short to have done so, which is also why the effect sizes are
   small.
 
-## 6. What this cost
+## 7. What this cost
 
 Roughly six hours on one A100, and four mistakes worth recording because each one produced a
 result that looked real:

@@ -3,6 +3,10 @@
 An LLM agent revises the synthetic pre-training prior of a tabular foundation model; LoRA
 makes each candidate prior cheap to evaluate; held-out real tasks say whether it worked.
 
+It does not work — and *why* it does not work is the result. Start with
+[`RESULTS.md`](RESULTS.md) for the measured findings, [`NEXT.md`](NEXT.md) for the state of
+play and the commands to pick the work back up.
+
 ## The idea
 
 TabICL/TabPFN are pre-trained on a prior over random structural causal models. That prior is
@@ -16,60 +20,65 @@ failure, and LoRA-adapt the *released* checkpoint to each candidate (2.1% of par
 The arm that decides the paper is **random search over the same knobs, same budget**. Without
 it, any gain could just be search.
 
+## What came out
+
+A C2ST separates the prior's tables from real ones perfectly (AUC 1.000). The agent, given only
+those statistics, writes a generator that closes 30% of the gap. The model then gets **worse**
+— and so does random search, and so does keeping TabICL's own prior as an anchor. Every arm
+loses to leaving the checkpoint alone. The unrealism is domain randomisation; narrowing it
+destroys the coverage the model was relying on.
+
+The live hypothesis is the other half: don't repair the prior, **repair the context**. Same
+agent, moved to inference time, on a frozen model. It wins on one task so far
+(`context_bench.py`); it has never been run at scale. See `NEXT.md`.
+
 ## Layout
 
 | file | what it is |
 |---|---|
-| `priortrain.py` | prior knob space, `PriorDataset` construction, LoRA injection + training loop |
-| `stage1.py` | the search arms (`pretrained` / `base` / `random` / `agent`) and the DEV→TEST protocol |
-| `agent.py` | a second, inference-time agent (context/feature/acquire/synthesise under a cost budget) |
+| `agent_loop.py` | the prior-repair loop: audit → agent proposes knobs + generator code → LoRA → TabArena → error analysis → repeat. Arms: `agent` / `random` / `anchored` |
+| `context_bench.py` | **the live experiment**: the same agent at inference time, under a credit budget (1 credit = 1 real labelled row) |
+| `agent.py` | that inference-time agent (features / context curation / synthesis / buying real rows) |
+| `analysis2.py` | C2ST two-sample test — is the prior distinguishable from real tables, and *what gives it away* |
+| `prior_audit.py` | first-pass audit of the released prior (medians per axis) |
+| `close_gap.py` | the LLM writes the data generator; graded by per-axis KS distance |
+| `realism.py` | compiles and sandboxes the LLM-authored `realize(X, y, rng)` |
+| `priortrain.py` | the 19 prior knobs, `PriorDataset` construction, LoRA injection, training loop |
+| `stage1.py` | the earlier arm protocol (`pretrained` / `base` / `random` / `agent`), superseded by `agent_loop.py` |
+| `tabarena.py` | the benchmark: 36 TabICL-runnable classification tasks, DEV 12 / TEST 24, cached |
 | `data.py` | OpenML tasks, the ctx/pool/val/test split, column anonymisation |
 | `tfm.py` | frozen TabICL scorer + the credit cost model |
-| `llm.py`, `llm_server.py` | LLM backend. Experiments run on the A100; the `claude` CLI only exists on the laptop, so the server calls back through an SSH reverse tunnel. Every response is cached by prompt hash, so the run is resumable and replayable at zero LLM cost. |
-| `emit.py` | writes `paper/numbers.tex` + `paper/fig_search.pdf` **from `stage1.jsonl`** |
+| `sweep_adapt.py`, `sweep_full.py` | LR / adapter / full-fine-tune sweeps, DEV-selected |
+| `sig.py` | paired significance, one difference per (task, seed) |
+| `llm.py`, `llm_server.py` | LLM backend, cached by prompt hash so reruns are free and a crashed run resumes. `llm_server.py` is the old reverse-tunnel fallback |
+| `emit.py` | writes `paper/numbers.tex` + `paper/fig_search.pdf` **from the results file** |
 | `paper/` | ICML 2025 style, 4 pages |
 
 **No number in the paper is typed by hand.** `main.tex` only ever references macros that
-`emit.py` generates from the results file.
+`emit.py` generates from the results file, and those generated artifacts (`numbers.tex`,
+`knobs.tex`, `main.pdf`) are gitignored — a stale number can never be mistaken for a result.
 
 ## Reproducing
 
 ```bash
-# laptop: serve the agent's brain
-python llm_server.py 8765
-
-# A100: run the grid, calling back through the tunnel
-ssh -R 8791:127.0.0.1:8765 user@host
-export CUDA_VISIBLE_DEVICES=1 TABAGENT_LLM_URL=http://127.0.0.1:8791
-for seed in 0 1 2; do
-  for arm in pretrained base random agent; do
-    python stage1.py --arm $arm --seed $seed --rounds 6 --steps 200
-  done
-done
-
-# laptop: numbers + figure + pdf
+python analysis2.py 0                                # the C2ST diagnosis
+python close_gap.py --rounds 6                       # LLM writes the generator, graded by KS
+python agent_loop.py --arm agent  --rounds 3 --k 3   # the loop
+python agent_loop.py --arm random --rounds 3 --k 3   # the control
+python sig.py                                        # paired significance
 python emit.py && (cd paper && ../tools/tectonic -X compile main.tex --outdir .)
 ```
 
-## Protocol (frozen before the grid ran)
-
-- Backbone: released `tabicl-classifier-v2`, never re-pre-trained.
-- 5 DEV tasks (agent may see summary stats — **never rows, never the task's name**), 6 disjoint
-  TEST tasks the loop never touches.
-- 6 prior candidates per search arm, 200 LoRA steps each, 3 seeds.
-- Significance: paired differences per (task, seed), n=18. Bootstrap 95% CI + Wilcoxon.
-- Excluded `adult` on purpose — Bordt et al. (2024) show it is memorised verbatim by
-  GPT-class models.
-
-Seeds, tasks, rounds and the selection rule were fixed in code before results existed and
-were not revisited afterwards.
+Runs go on the A100 (`CUDA_VISIBLE_DEVICES=1`, GPU 0 belongs to someone else) and must be
+detached — `setsid nohup ... < /dev/null &` — because the network drops. The LLM key is read
+from `../.env` (gitignored). `NEXT.md` has the traps already stepped in; read it before
+launching anything long.
 
 ## Note on the second agent (`agent.py`)
 
-Built first, kept because it is a clean complementary result: at *inference* time, with the
-model frozen and no training at all, an agent buys/derives/synthesises context under a credit
-budget (one credit = one real labelled row). On `credit-g` it reached test AUC 0.7789 from a
-0.7652 baseline for 33 of 100 credits, spending them on three world-knowledge features
-(`monthly_installment_burden`, `repayment_strain`, `liquidity_adjusted_burden`) and 30
-uncertainty-sampled rows. Not in the 4-page paper; it is a separate story about inference-time
-context, not the prior.
+Built first, kept because it became the live hypothesis. At *inference* time, model frozen, no
+training at all: the agent buys/derives/synthesises context under a credit budget. On
+`credit-g` it reached test AUC 0.7789 from a 0.7652 baseline for 33 of 100 credits, spending
+them on three world-knowledge features (`monthly_installment_burden`, `repayment_strain`,
+`liquidity_adjusted_burden`) and 30 uncertainty-sampled real rows. TabICL never sees column
+names; that is world knowledge doing work the prior cannot supply.
