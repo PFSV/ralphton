@@ -6,7 +6,7 @@ down that the experiments have not earned.
 
 | project | question | state |
 |---|---|---|
-| [`tabagent/`](tabagent/) | Can an LLM agent repair the frozen synthetic prior of a tabular foundation model (TabICL), after the checkpoint has shipped? | **Negative result, measured.** Every arm loses to leaving the checkpoint alone. The live follow-up is repairing the *context* instead of the prior. |
+| [`tabagent/`](tabagent/) | Can an LLM agent repair the frozen synthetic prior of a tabular foundation model (TabICL), after the checkpoint has shipped? | **Negative result at small scale.** Every arm loses to leaving the checkpoint alone. A full-scale run was retracted — a revoked key had turned the agent into random search, silently. The live follow-up is repairing the *context* instead of the prior, and it is running now. |
 | [`laion_data/`](laion_data/) | Does Doerig et al. (*Nature Machine Intelligence* 2025), "High-level visual representations in the human brain are aligned with large language models", reproduce — and does it generalise off COCO? | **Reproduction in progress.** Figures 1 and 3 reproduce; one published claim retracted after audit; the paper's Fig. 4 activations turn out to be irreproducible from the authors' own code. |
 
 ## tabagent — repairing the prior
@@ -19,6 +19,11 @@ search over the same knobs, same GPU seconds.
 A C2ST says the prior is perfectly distinguishable from real tables (AUC 1.000). The agent
 closes 30% of that gap — and the model gets **worse**. The unrealism is domain randomisation;
 narrowing it destroys the coverage the model depends on.
+
+The retraction is worth reading too: every silent fallback in that codebase turned out to be a
+lie generator. A revoked API key, an exception handler that returned `""`, and a caller that
+read the silence as "the agent had no proposal" produced a full-scale table that reported random
+search under the name `agent`.
 
 → [`tabagent/RESULTS.md`](tabagent/RESULTS.md) (findings) · [`tabagent/NEXT.md`](tabagent/NEXT.md) (handoff)
 

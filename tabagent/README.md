@@ -28,9 +28,16 @@ those statistics, writes a generator that closes 30% of the gap. The model then 
 loses to leaving the checkpoint alone. The unrealism is domain randomisation; narrowing it
 destroys the coverage the model was relying on.
 
+That result is at small scale (2 rounds, 150 steps per prior, seed 0). A full-scale run was
+reported and then **retracted**: a revoked API key made `llm.ask()` return `""`, the loop read
+that as "no proposal" and substituted a random prior while still calling itself `agent`. No arm
+has tested LLM-designed priors at full scale. `RESULTS.md` and `NEXT.md` carry the accounting;
+the silent fallbacks that caused it are gone (the LLM now raises `LLMDown`, and `preflight()`
+proves it is alive before any GPU is spent).
+
 The live hypothesis is the other half: don't repair the prior, **repair the context**. Same
-agent, moved to inference time, on a frozen model. It wins on one task so far
-(`context_bench.py`); it has never been run at scale. See `NEXT.md`.
+agent, moved to inference time, on a frozen model. It won on `credit-g`, and it is running
+across all 24 TEST tasks now — the first time at scale (`context_bench.py`). See `NEXT.md`.
 
 ## Layout
 
@@ -50,7 +57,8 @@ agent, moved to inference time, on a frozen model. It wins on one task so far
 | `tfm.py` | frozen TabICL scorer + the credit cost model |
 | `sweep_adapt.py`, `sweep_full.py` | LR / adapter / full-fine-tune sweeps, DEV-selected |
 | `sig.py` | paired significance, one difference per (task, seed) |
-| `llm.py`, `llm_server.py` | LLM backend, cached by prompt hash so reruns are free and a crashed run resumes. `llm_server.py` is the old reverse-tunnel fallback |
+| `llm.py` | LLM backend: falls through openai → tunnel → local `claude` CLI, raises `LLMDown` rather than returning `""`, `preflight()`s before any GPU is spent. Cached by prompt hash, so reruns are free and a crashed run resumes |
+| `llm_server.py`, `tunnel.sh` | the reverse tunnel: serve the laptop's `claude` to the A100, and keep the tunnel alive across network drops |
 | `emit.py` | writes `paper/numbers.tex` + `paper/fig_search.pdf` **from the results file** |
 | `paper/` | ICML 2025 style, 4 pages |
 
@@ -71,8 +79,10 @@ python emit.py && (cd paper && ../tools/tectonic -X compile main.tex --outdir .)
 
 Runs go on the A100 (`CUDA_VISIBLE_DEVICES=1`, GPU 0 belongs to someone else) and must be
 detached — `setsid nohup ... < /dev/null &` — because the network drops. The LLM key is read
-from `../.env` (gitignored). `NEXT.md` has the traps already stepped in; read it before
-launching anything long.
+from `../.env` (gitignored); it is currently **revoked**, so runs go through the reverse tunnel
+to the laptop's `claude` (`./tunnel.sh` locally, `TABAGENT_LLM_URL=http://127.0.0.1:8791` on the
+server). A fresh key removes that dependency and is the first thing worth fixing. `NEXT.md` has
+the traps already stepped in; read it before launching anything long.
 
 ## Note on the second agent (`agent.py`)
 
