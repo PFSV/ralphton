@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 
 import numpy as np
 
@@ -44,13 +45,20 @@ def stimuli_73k() -> np.ndarray:
     return f["imgBrick"]  # (73000, 425, 425, 3) uint8 in NSD; sliced lazily
 
 
+def say(msg: str) -> None:
+    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
 def activations(arm: str, seed: int, crop: str, imgs) -> np.ndarray:
     out = C.DERIV / "dnn_act" / f"{arm}_seed{seed}_{crop}.npy"
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
+        say(f"  {out.name}: cached")
         return np.load(out)
     model = f"blt_vNet_half_channels_{arm}_Dec23_seed{seed}"
+    t0 = time.time()
     extractor = dnn.load_extractor(model)   # build the graph ONCE, not once per chunk
+    say(f"  {model} [{crop}]: graph built in {time.time() - t0:.0f}s, extracting 73,000 images")
     a = np.zeros((73000, C.RCNN_PREREADOUT_DIM), dtype=np.float32)
     for lo in range(0, 73000, 2000):
         hi = min(lo + 2000, 73000)
@@ -58,7 +66,11 @@ def activations(arm: str, seed: int, crop: str, imgs) -> np.ndarray:
         # seed sees the same crop of a given image (required for the matched Fig. 4d contrast)
         a[lo:hi] = dnn.extract(model, np.asarray(imgs[lo:hi]), crop=crop, offset=lo,
                                extractor=extractor)
+        el = time.time() - t0
+        say(f"    {hi:6d}/73000  {el / 60:5.1f} min elapsed, "
+            f"~{el / hi * (73000 - hi) / 60:5.1f} min left")
     np.save(out, a)
+    say(f"  {out.name}: written in {(time.time() - t0) / 60:.1f} min")
     return a
 
 
@@ -68,6 +80,7 @@ def main() -> None:
     ap.add_argument("--seeds", nargs="*", type=int, default=SEEDS)
     args = ap.parse_args()
 
+    say(f"crops={args.crops}  seeds={args.seeds}")
     imgs = stimuli_73k()
     mask = roi.streams_mask()
     llm_emb = E.load("captions")
@@ -76,8 +89,10 @@ def main() -> None:
     for crop in args.crops:
         results[crop] = {}
         # brain RDMs computed ONCE per (subject, split, ROI) and reused for every model
+        say(f"[{crop}] brain RDMs: 8 subjects x {len(C.STREAMS_MAIN_ROIS)} ROIs")
         brain, splits = {}, {}
         for subj in C.SUBJECTS:
+            t0 = time.time()
             b = roi.load_betas(subj)
             splits[subj] = rsa.make_splits(subj)
             brain[subj] = {
@@ -85,16 +100,23 @@ def main() -> None:
                 for r in C.STREAMS_MAIN_ROIS
             }
             del b
+            say(f"  {subj}: {len(splits[subj])} splits, {time.time() - t0:.0f}s")
 
         for arm in ARMS:
+            say(f"[{crop}] arm={arm} ({ARMS[arm]})")
             # per-seed correlations, averaged across seeds AT THE CORRELATION LEVEL
             per_seed: list[dict[str, dict[str, float]]] = []
             for seed in args.seeds:
                 act = activations(arm, seed, crop, imgs)
                 assert act.shape[1] == 512
+                t0 = time.time()
                 per_seed.append(
                     {s: roi.model_correlations(s, act, brain[s], splits[s]) for s in C.SUBJECTS}
                 )
+                mu = np.mean([per_seed[-1][s][r] for s in C.SUBJECTS
+                              for r in C.STREAMS_MAIN_ROIS])
+                say(f"  seed{seed}: RSA done in {time.time() - t0:.0f}s, mean r over "
+                    f"8 subj x {len(C.STREAMS_MAIN_ROIS)} ROIs = {mu:.4f}")
             results[crop][arm] = {
                 s: {
                     r: float(np.mean([ps[s][r] for ps in per_seed]))
@@ -104,6 +126,7 @@ def main() -> None:
             }
 
         # the LLM embedding itself (Fig. 4c reference): does the RCNN beat its own target?
+        say(f"[{crop}] MPNet caption embedding (Fig. 4c reference)")
         results[crop]["llm_embedding"] = {
             s: roi.model_correlations(s, llm_emb, brain[s], splits[s]) for s in C.SUBJECTS
         }
