@@ -1,0 +1,30 @@
+{
+ "people_minus_places": {
+  "n_sig_uncorrected_as_published": 41666,
+  "n_sig_fdr_extension": 714,
+  "n_valid_vertices": 327684,
+  "mean_contrast_by_roi": {
+   "early": -0.05897980183362961,
+   "midventral": 0.35053661465644836,
+   "midlateral": 0.21302203834056854,
+   "midparietal": -0.15104326605796814,
+   "ventral": 0.04916812479496002,
+   "lateral": 0.20546212792396545,
+   "parietal": -0.1456908881664276
+  }
+ },
+ "food_minus_people": {
+  "n_sig_uncorrected_as_published": 32652,
+  "n_sig_fdr_extension": 0,
+  "n_valid_vertices": 327684,
+  "mean_contrast_by_roi": {
+   "early": 0.12251054495573044,
+   "midventral": -0.06377478688955307,
+   "midlateral": 0.1304653137922287,
+   "midparietal": 0.23510509729385376,
+   "ventral": 0.0013190709287300706,
+   "lateral": -0.20033256709575653,
+   "parietal": 0.13420911133289337
+  }
+ }
+}
