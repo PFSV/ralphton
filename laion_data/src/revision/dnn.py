@@ -187,18 +187,33 @@ def preprocess(
     return x.numpy().astype(np.float32)
 
 
+def load_extractor(model: str):
+    """Build the network ONCE and return (activation_model, hparams).
+
+    Rebuilding a 53M-parameter graph and reloading its weights for every image chunk cost
+    ~25 min per model (37 rebuilds over 73,000 images). Build once, reuse across chunks.
+    """
+    _enable_memory_growth()
+    hp = load_hparams(model)
+    net = build_model(model, hp)
+    return prereadout_model(net, hp), hp
+
+
 def extract(
-    model: str, images: np.ndarray, crop: str = "center", batch: int = 32, offset: int = 0
+    model: str, images: np.ndarray, crop: str = "center", batch: int = 32, offset: int = 0,
+    extractor=None,
 ) -> np.ndarray:
     """-> (n_images, 512) float32 pre-readout activations.
 
     `offset` is the index of images[0] in the full stimulus set; it keys the crop RNG so the
     result is reproducible and identical across models and seeds.
+    `extractor` is an optional (act_model, hparams) pair from `load_extractor`, so callers
+    looping over chunks do not rebuild the network each time.
     """
-    _enable_memory_growth()
-    hp = load_hparams(model)
-    net = build_model(model, hp)
-    act = prereadout_model(net, hp)
+    if extractor is None:
+        act, hp = load_extractor(model)
+    else:
+        act, hp = extractor
 
     out = np.zeros((len(images), C.RCNN_PREREADOUT_DIM), dtype=np.float32)
     for a in range(0, len(images), batch):
