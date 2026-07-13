@@ -34,6 +34,40 @@
       "Bash(/home/snucsnl/ralphton/.venv/bin/python -m pytest *)"
     ]
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/gpu_guard.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/evidence_guard.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session_context.sh"
+          }
+        ]
+      }
+    ]
+  },
   "env": {
     "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
     "HF_HOME": "/home/snucsnl/.cache/hf",
