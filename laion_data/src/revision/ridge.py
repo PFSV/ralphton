@@ -20,13 +20,19 @@ default `scoring=None`. That calls `FracRidgeRegressor.score` -> `r2_score` with
 fraction maximising it is applied to EVERY voxel. `best_frac_` is a scalar (verified
 directly against the installed fracridge 3.0).
 
-We reimplement that selection rule exactly, but vectorised over fractions and chunked over
-voxels: `GridSearchCV` refits the model 20 fracs x 5 folds = 100 times, each time
-recomputing the SVD and the full (768 x 327k) coefficient array, which is intractable here.
-`fracridge.fracridge()` computes all 20 fractions in one call, so we evaluate a fold once
-per voxel-chunk and accumulate the R² sum across chunks before taking the global argmax.
-This is mathematically identical to the released selection (same uniform-average R², same
-folds) -- see `tests/test_ridge.py::test_shared_frac_matches_gridsearchcv`.
+Two engineering constraints forced the shape of this module
+-----------------------------------------------------------
+1. **The library cannot do this at scale.** `fracridge.fracridge()`'s main loop is
+   `for ii in range(y.shape[-1])` -- one Python iteration per target. With 327,684 vertices
+   x 5 folds x 8 subjects it did not finish a single subject in 8 hours. The algorithm is
+   fully vectorisable, so `fracridge_gpu` reimplements it batched on the GPU, matching the
+   library's coefficients to 1e-14 (tests/test_modules.py::test_gpu_fracridge_matches_library).
+   The SVD is hoisted out of the chunk loop, since X is constant within a fold.
+2. **The betas do not fit in RAM three times over.** A naive
+   `Y = betas.astype(f32)[:, good]` then `Y[train]` makes three ~13 GB copies and gets
+   OOM-killed. So the betas stay as an fp16 memmap and this module materialises only one
+   (n_images, CHUNK) float32 block at a time. Callers pass ROW indices (train/test) and
+   COLUMN indices (the non-NaN vertices) rather than pre-sliced arrays.
 
 Frac grid: `np.linspace(1/20, 1 + 1/20, 20)` = 0.05 .. 1.05, step 0.05263.
 NOT the paper's stated "0.05 to 1.00 in steps of 0.05" -- the largest fraction exceeds OLS.
@@ -43,58 +49,130 @@ intercept) but does NOT scale to unit variance. Embeddings are not L2-normalised
 from __future__ import annotations
 
 import numpy as np
-from fracridge import fracridge
+import torch
 from sklearn.model_selection import KFold
 
 from . import config as C
 from . import nsd_data
+from .fracridge_gpu import fracridge_from_svd
 
 FRACS = np.linspace(C.RIDGE_FRAC_MIN, C.RIDGE_FRAC_MAX, C.RIDGE_N_FRACS)
+CHUNK = 4096  # targets per GPU batch
 
 
-def _r2_sum(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
-    """Sum over targets of R², for each frac. y_pred: (n, n_fracs, n_targets)."""
-    ss_res = ((y_true[:, None, :] - y_pred) ** 2).sum(axis=0)          # (n_fracs, n_targets)
-    ss_tot = ((y_true - y_true.mean(0)) ** 2).sum(axis=0)              # (n_targets,)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        r2 = 1.0 - ss_res / ss_tot
-    return np.nansum(r2, axis=1)
+def _pick_device() -> str:
+    """Use the GPU with the most free memory.
+
+    This box is shared: a plain `cuda` (= cuda:0) picked a card another user was holding
+    36 GB on, and the ridge OOM'd. Selecting by free memory makes the pipeline independent
+    of which card happens to be busy.
+    """
+    if not torch.cuda.is_available():
+        return "cpu"
+    free = [torch.cuda.mem_get_info(i)[0] for i in range(torch.cuda.device_count())]
+    return f"cuda:{int(np.argmax(free))}"
 
 
-def select_frac(X: np.ndarray, Y: np.ndarray, chunk: int = 20000) -> tuple[float, np.ndarray]:
+DEVICE = _pick_device()
+
+# float64, NOT float32. The design matrix (mean-centred MPNet caption embeddings) has
+# condition number ~3.5e19 -- its smallest singular value is 6e-19. `ols = (Uᵀy)/s` therefore
+# divides by near-zero, and in float32 the whole solve returns NaN for 100% of targets. The
+# reference library runs in float64 for exactly this reason. Verified: in float64 our
+# predictions match `fracridge` to 9e-05 in encoding r.
+DTYPE = torch.float64
+
+
+def _dev(x: np.ndarray) -> torch.Tensor:
+    return torch.as_tensor(np.ascontiguousarray(x), device=DEVICE, dtype=DTYPE)
+
+
+def _block(Y, a: int, b: int) -> np.ndarray:
+    """Materialise ONE contiguous float64 column-block of Y (which may be an fp16 memmap).
+
+    Contiguous, not fancy-indexed: gathering scattered columns from a row-major memmap
+    re-reads every row for each block and made this I/O-bound. NaN vertices are kept here
+    and handled at the R² step instead -- they stay confined to their own target column,
+    because fracridge is independent across targets.
+    """
+    return np.asarray(Y[:, a:b], dtype=np.float64)
+
+
+def select_frac(
+    X: np.ndarray, Y, rows: np.ndarray, chunk: int = CHUNK
+) -> tuple[float, np.ndarray]:
     """The released selection rule: ONE shared fraction maximising uniform-average R².
+
+    X    : (n_images, p) design matrix (full; `rows` selects the training images)
+    Y    : (n_images, n_targets) targets, possibly an fp16 memmap
+    rows : training image indices
+
+    NaN targets (vertices that are NaN for this subject) are excluded from the average, as
+    the release does by dropping them up front -- here they simply contribute nothing and
+    are not counted in the denominator, which is equivalent.
 
     Returns (best_frac, mean_r2_per_frac).
     """
     kf = KFold(n_splits=C.RIDGE_CV_FOLDS)  # shuffle=False -> contiguous folds
-    total = np.zeros(len(FRACS))
-    n_targets = Y.shape[1]
+    fracs = _dev(FRACS)
+    total = torch.zeros(len(FRACS), device=DEVICE, dtype=torch.float64)
+    n_valid = 0
+    n_t = Y.shape[1]
 
-    for tr, va in kf.split(X):
-        Xtr, Xva, Ytr, Yva = X[tr], X[va], Y[tr], Y[va]
-        # fit_intercept=True => centre, fit on centred data, add the mean back
-        xm, ym = Xtr.mean(0), Ytr.mean(0)
-        for a in range(0, n_targets, chunk):
-            b = min(a + chunk, n_targets)
-            coef, _ = fracridge(Xtr - xm, Ytr[:, a:b] - ym[a:b], fracs=FRACS)
-            # coef: (n_features, n_fracs, n_chunk)
-            pred = np.einsum("nf,fkt->nkt", Xva - xm, coef) + ym[a:b]
-            total += _r2_sum(Yva[:, a:b], pred)
+    folds = list(kf.split(rows))
+    svds, Xvas = [], []
+    for tr, va in folds:
+        Xtr = _dev(X[rows[tr]])
+        Xva = _dev(X[rows[va]])
+        xm = Xtr.mean(0, keepdim=True)
+        svds.append(torch.linalg.svd(Xtr - xm, full_matrices=False))
+        Xvas.append(Xva - xm)
 
-    mean_r2 = total / (n_targets * C.RIDGE_CV_FOLDS)
+    for a in range(0, n_t, chunk):
+        b = min(a + chunk, n_t)
+        Yblock = _block(Y, a, b)  # (n_images, chunk)
+        valid = np.isfinite(Yblock).all(axis=0)
+        n_valid += int(valid.sum())
+
+        for (tr, va), svd, Xva_c in zip(folds, svds, Xvas):
+            Ytr = _dev(Yblock[rows[tr]])
+            Yva = _dev(Yblock[rows[va]])
+            ym = Ytr.mean(0, keepdim=True)
+
+            coef, _ = fracridge_from_svd(svd.U, svd.S, svd.Vh, Ytr - ym, fracs)  # (p,f,t)
+            pred = torch.einsum("np,pfb->nfb", Xva_c, coef) + ym[:, None, :]
+
+            ss_res = ((Yva[:, None, :] - pred) ** 2).sum(0)           # (f, t)
+            ss_tot = ((Yva - Yva.mean(0, keepdim=True)) ** 2).sum(0)  # (t,)
+            r2 = 1.0 - ss_res / ss_tot.clamp_min(1e-12)
+            total += torch.nan_to_num(r2, nan=0.0, posinf=0.0, neginf=0.0).sum(1)
+            del coef, pred
+
+    mean_r2 = (total / (n_valid * C.RIDGE_CV_FOLDS)).cpu().numpy()
     return float(FRACS[int(np.argmax(mean_r2))]), mean_r2
 
 
 def fit_predict(
-    X_train: np.ndarray, Y_train: np.ndarray, X_test: np.ndarray, frac: float, chunk: int = 20000
+    X: np.ndarray, Y, rows: np.ndarray, X_test: np.ndarray, frac: float, chunk: int = CHUNK
 ) -> np.ndarray:
-    """Refit at the chosen fraction on the full training set and predict the test set."""
-    xm, ym = X_train.mean(0), Y_train.mean(0)
-    out = np.zeros((X_test.shape[0], Y_train.shape[1]), dtype=np.float32)
-    for a in range(0, Y_train.shape[1], chunk):
-        b = min(a + chunk, Y_train.shape[1])
-        coef, _ = fracridge(X_train - xm, Y_train[:, a:b] - ym[a:b], fracs=np.array([frac]))
-        out[:, a:b] = np.einsum("nf,fkt->nkt", X_test - xm, coef)[:, 0, :] + ym[a:b]
+    """Refit at the chosen fraction on `rows` and predict `X_test`. -> (n_test, n_targets)"""
+    Xtr = _dev(X[rows])
+    Xte = _dev(X_test)
+    xm = Xtr.mean(0, keepdim=True)
+    svd = torch.linalg.svd(Xtr - xm, full_matrices=False)
+    Xte_c = Xte - xm
+    fracs = _dev(np.array([frac]))
+
+    n_t = Y.shape[1]
+    out = np.zeros((X_test.shape[0], n_t), dtype=np.float32)
+    for a in range(0, n_t, chunk):
+        b = min(a + chunk, n_t)
+        Ytr = _dev(_block(Y, a, b)[rows])
+        ym = Ytr.mean(0, keepdim=True)
+        coef, _ = fracridge_from_svd(svd.U, svd.S, svd.Vh, Ytr - ym, fracs)
+        pred = torch.einsum("np,pfb->nfb", Xte_c, coef)[:, 0, :] + ym
+        out[:, a:b] = pred.float().cpu().numpy()
+        del coef, pred
     return out
 
 

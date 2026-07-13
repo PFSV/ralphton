@@ -1,18 +1,22 @@
-"""Figures 1c / 1d — the LLM encoding model.
+"""Figures 1c / 1d — the LLM encoding model (M10).
 
-M10: fit fractional ridge from the 768-d MPNet caption embedding to whole-brain fsaverage
-betas, holding out the 515 shared images; score with per-vertex Pearson r on the test set.
+Fit fractional ridge from the 768-d MPNet caption embedding to whole-brain fsaverage betas,
+holding out the 515 shared images; score with per-vertex Pearson r on the test set.
 
 Fig. 1c  group map of encoding accuracy            (paper colorbar -0.73 .. 0.73)
 Fig. 1d  per-vertex encoding r vs inter-participant agreement, coloured by ROI group
          (paper axes 0 .. 0.8)
 
 The paper's own stated sanity check (claim C2) is that encoding accuracy "approaches
-inter-participant agreement in all ROIs" — that is the criterion we gate on, since it is
-the only quantitative statement attached to this figure.
+inter-participant agreement in all ROIs" — that is the criterion we gate on, since it is the
+only quantitative statement attached to this figure.
 
 Key resolved detail (MI-17/X3): ONE shared ridge fraction for the whole model, selected by
 uniform-average R² across all vertices — not one per vertex. See src/revision/ridge.py.
+
+Memory: the betas are kept as an fp16 memmap and only 4096-vertex column blocks are ever
+materialised. Slicing them into float32 up front costs ~38 GB per subject and gets
+OOM-killed.
 """
 
 from __future__ import annotations
@@ -26,6 +30,15 @@ from src.revision import config as C
 from src.revision import embeddings as E
 from src.revision import nsd_data, ridge, roi
 
+BETAS_DIR = C.DERIV / "betas"
+
+
+def load_betas_memmap(subj: str) -> np.ndarray:
+    """(n_images, 327684) fp16, memory-mapped — NOT converted to float32."""
+    return np.load(BETAS_DIR / f"{subj}_betas_z_avg_fsaverage.npy", mmap_mode="r")
+
+
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -34,40 +47,37 @@ def main() -> None:
 
     emb = E.load("captions")
     mask = roi.streams_mask()
+    c515 = nsd_data.get_conditions_515()
 
     enc_r: dict[str, np.ndarray] = {}
     betas_515: dict[str, np.ndarray] = {}
     fracs: dict[str, float] = {}
 
     for subj in args.subjects:
-        betas = roi.load_betas(subj)                      # (n_images, 327684)
+        betas = load_betas_memmap(subj)
         _, keep = nsd_data.get_conditions_3rep(subj)
         tr, te = ridge.train_test_split_515(subj)
-
-        # The release drops vertices that are NaN for this subject, rather than imputing.
-        good = ~np.isnan(betas).any(axis=0)
-        Y = betas[:, good]
         X = emb[keep]
-        del betas
 
-        # leakage check: the 515 must not appear in training
-        assert not np.intersect1d(keep[tr], nsd_data.get_conditions_515()).size
+        # leakage check: none of the 515 test images may appear in training
+        assert not np.intersect1d(keep[tr], c515).size, "515 leaked into the training set"
 
-        frac, _ = ridge.select_frac(X[tr], Y[tr])
-        pred = ridge.fit_predict(X[tr], Y[tr], X[te], frac)
-        r = ridge.pairwise_corr(Y[te], pred)
+        frac, r2_curve = ridge.select_frac(X, betas, tr)
+        pred = ridge.fit_predict(X, betas, tr, X[te], frac)          # (515, n_vertices)
+        true = np.asarray(betas[te], dtype=np.float32)
 
-        full = np.full(C.N_VERTICES_FSAVERAGE, np.nan, dtype=np.float32)
-        full[good] = r
-        enc_r[subj] = full
+        with np.errstate(invalid="ignore", divide="ignore"):
+            r = ridge.pairwise_corr(true, pred)
+
+        enc_r[subj] = r.astype(np.float32)
         fracs[subj] = frac
+        betas_515[subj] = np.nan_to_num(true, nan=0.0)
 
-        b515 = np.zeros((len(te), C.N_VERTICES_FSAVERAGE), dtype=np.float32)
-        b515[:, good] = Y[te]
-        betas_515[subj] = b515
-
-        print(f"[Fig1] {subj}: frac={frac:.4f}  mean encoding r={np.nanmean(r):.4f}", flush=True)
-        del Y
+        print(f"[Fig1] {subj}: frac={frac:.4f}  mean encoding r={np.nanmean(r):.4f}  "
+              f"max={np.nanmax(r):.4f}  "
+              f"(R² varies only {r2_curve.max() - r2_curve.min():.2e} across the 20 fracs)",
+              flush=True)
+        del betas, true, pred
 
     ipa = ridge.inter_participant_agreement(betas_515)
     enc_mean = np.nanmean([enc_r[s] for s in args.subjects], axis=0)
