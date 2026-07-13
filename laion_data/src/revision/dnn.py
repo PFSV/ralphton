@@ -58,6 +58,31 @@ from . import config as C
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
+
+def _configure_gpu() -> None:
+    """Pin TF to the emptiest GPU and stop it pre-allocating the whole card.
+
+    This box is shared. TF defaults to GPU 0 and grabs all of its memory, so when another
+    user was holding 37 GB there, cuDNN failed with "No algorithm worked!" -- a
+    RESOURCE_EXHAUSTED that looks like a model bug but is pure allocation. Select by free
+    memory (as ridge.py does) and enable memory growth.
+    """
+    if os.environ.get("CUDA_VISIBLE_DEVICES"):
+        return
+    try:
+        import subprocess
+
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, check=True,
+        ).stdout.split()
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(int(min(range(len(out)), key=lambda i: int(out[i]))))
+    except Exception:
+        pass
+
+
+_configure_gpu()
+
 CKPT_DIR = C.DATA / "checkpoints"
 CODE_DIR = C.CODE / "checkpoint_code"
 
@@ -90,6 +115,16 @@ def build_model(model: str, hparams: dict):
     net = setup.get_model_function(hparams["model_name"])(input_shape, n_classes, hparams)
     net.load_weights(str(CKPT_DIR / model / "training_checkpoints" / "ckpt_ep200.h5"))
     return net
+
+
+def _enable_memory_growth() -> None:
+    import tensorflow as tf
+
+    for g in tf.config.list_physical_devices("GPU"):
+        try:
+            tf.config.experimental.set_memory_growth(g, True)
+        except RuntimeError:
+            pass  # already initialised
 
 
 def prereadout_model(net, hparams: dict):
@@ -153,13 +188,14 @@ def preprocess(
 
 
 def extract(
-    model: str, images: np.ndarray, crop: str = "center", batch: int = 128, offset: int = 0
+    model: str, images: np.ndarray, crop: str = "center", batch: int = 32, offset: int = 0
 ) -> np.ndarray:
     """-> (n_images, 512) float32 pre-readout activations.
 
     `offset` is the index of images[0] in the full stimulus set; it keys the crop RNG so the
     result is reproducible and identical across models and seeds.
     """
+    _enable_memory_growth()
     hp = load_hparams(model)
     net = build_model(model, hp)
     act = prereadout_model(net, hp)
