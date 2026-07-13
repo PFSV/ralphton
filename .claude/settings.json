@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Write(./laion_data/data/**)",
+      "Edit(./laion_data/data/**)",
+      "Write(./.venv/**)",
+      "Edit(./.venv/**)",
+      "Write(**/*.pdf)",
+      "Edit(**/*.pdf)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/*.pem)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "ask": [
+      "Bash(pip install *)",
+      "Bash(pip uninstall *)",
+      "Bash(kill *)",
+      "Bash(pkill *)"
+    ],
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(nvidia-smi*)",
+      "Bash(rg *)",
+      "Bash(jq *)",
+      "Bash(wc *)",
+      "Bash(python -m pytest *)",
+      "Bash(/home/snucsnl/ralphton/.venv/bin/python -m pytest *)"
+    ]
+  },
+  "env": {
+    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+    "HF_HOME": "/home/snucsnl/.cache/hf",
+    "MAX_MCP_OUTPUT_TOKENS": "25000"
+  },
+  "includeCoAuthoredBy": false
+}
