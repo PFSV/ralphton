@@ -90,15 +90,19 @@ def main() -> None:
         results[crop] = {}
         # brain RDMs computed ONCE per (subject, split, ROI) and reused for every model
         say(f"[{crop}] brain RDMs: 8 subjects x {len(C.STREAMS_MAIN_ROIS)} ROIs")
-        brain, splits = {}, {}
+        brain, splits, r515 = {}, {}, {}
+        c515 = nsd_data.get_conditions_515()
         for subj in C.SUBJECTS:
             t0 = time.time()
             b = roi.load_betas(subj)
+            _, keep = nsd_data.get_conditions_3rep(subj)
+            pos515 = np.searchsorted(keep, c515)
             splits[subj] = rsa.make_splits(subj)
-            brain[subj] = {
-                r: roi.brain_rdms(roi.roi_patterns(b, mask, r), splits[subj])
-                for r in C.STREAMS_MAIN_ROIS
-            }
+            brain[subj], r515[subj] = {}, {}
+            for r in C.STREAMS_MAIN_ROIS:
+                X = roi.roi_patterns(b, mask, r)
+                brain[subj][r] = roi.brain_rdms(X, splits[subj])
+                r515[subj][r] = rsa.rdm(X[pos515])          # for the noise ceiling
             del b
             say(f"  {subj}: {len(splits[subj])} splits, {time.time() - t0:.0f}s")
 
@@ -125,14 +129,36 @@ def main() -> None:
                 for s in C.SUBJECTS
             }
 
-        # the LLM embedding itself (Fig. 4c reference): does the RCNN beat its own target?
-        say(f"[{crop}] MPNet caption embedding (Fig. 4c reference)")
+        # the LLM embedding itself: does the RCNN beat the very target it was trained on? (C14)
+        say(f"[{crop}] MPNet caption embedding (the RCNN's training target)")
         results[crop]["llm_embedding"] = {
             s: roi.model_correlations(s, llm_emb, brain[s], splits[s]) for s in C.SUBJECTS
         }
 
+        # Fig. 4e is noise-ceiling-corrected (caption: "Noise-ceiling-corrected correlations";
+        # release: roi_analyses.py DO_NOISE_CEILING=True, nsd_roi_analyses.py:162 divides).
+        # Plain division, ROI analyses only -- same convention as our Fig. 3.
+        say(f"[{crop}] noise ceilings (LOSO on the shared 515)")
+        nc = roi.noise_ceilings(r515)
+        results[crop]["noise_ceilings"] = nc
+        keys = ["mpnet", "multihot", "llm_embedding"]
+        results[crop]["corrected"] = {
+            r: {s: {k: results[crop][k][s][r] / nc[r][s] for k in keys} for s in C.SUBJECTS}
+            for r in C.STREAMS_MAIN_ROIS
+        }
+        results[crop]["stats"] = {
+            r: roi.group_stats(results[crop]["corrected"][r], keys)
+            for r in C.STREAMS_MAIN_ROIS
+        }
+
     # ---- report ----
-    print("\n=== Fig. 4c/4d — RSA, mean over 8 participants (uncorrected r) ===")
+    # NOT Fig. 4c/4d. Those two panels are volumetric SEARCHLIGHT contrast maps (radius 6,
+    # func1pt8mm; nsd_searchlight_main_tf.py:24-26), which we do not compute -- the volumetric
+    # betas were never downloaded. What follows is the streams-ROI, fsaverage analysis, which is
+    # the authors' OWN adjudication of the same two contrasts (examples/roi_analyses.py,
+    # PAPER_FIG=='fig4') and is what Fig. 4e plots. It tests C14 and C16 directionally; it
+    # cannot test their spatial extent ("a wide network of higher visual areas").
+    print("\n=== Fig. 4e — streams-ROI RSA, noise-ceiling-corrected, mean over 8 participants ===")
     for crop in args.crops:
         print(f"\ncrop = {crop}" + ("   [the paper's stated preprocessing]" if crop == "center"
                                     else "   [what the released code actually does, unseeded]"))
@@ -142,14 +168,47 @@ def main() -> None:
                            ("llm_embedding", "MPNet embedding (target)")]:
             row = f"{label:30s}"
             for r in C.STREAMS_MAIN_ROIS:
-                v = np.mean([results[crop][key][s][r] for s in C.SUBJECTS])
+                v = np.mean([results[crop]["corrected"][r][s][key] for s in C.SUBJECTS])
                 row += f"{v:11.4f}"
             print(row)
 
+        print("\n  contrasts (paired t over the 8 participants, BH-FDR; the release uses an "
+              "unpaired\n  ttest_ind on this within-subject design -- we report both):")
+        for r in C.STREAMS_MAIN_ROIS:
+            st = results[crop]["stats"][r]
+            c14 = _pair(st, "mpnet", "llm_embedding")
+            c16 = _pair(st, "mpnet", "multihot")
+            print(f"    {r:9s} C14 RCNN>MPNet: d={c14[0]:+.4f} p_paired={c14[1]:.2e} "
+                  f"p_unpaired={c14[2]:.2e}   "
+                  f"C16 LLM>categ: d={c16[0]:+.4f} p_paired={c16[1]:.2e} p_unpaired={c16[2]:.2e}")
+
     p = C.REPORTS / "figures" / "fig4_dnn.json"
     p.parent.mkdir(parents=True, exist_ok=True)
-    json.dump(results, open(p, "w"), indent=1)
+    json.dump(p_safe(results), open(p, "w"), indent=1)
     print(f"\nwrote {p}")
+
+
+def _pair(st: dict, a: str, b: str) -> tuple[float, float, float]:
+    """(mean difference a-b, paired p, unpaired p) for one ROI out of roi.group_stats.
+
+    group_stats stores each comparison once, under whichever order the model list gave it, so
+    look the pair up in both orders. The p-values are order-free (two-sided); only the
+    difference carries a sign, and we always report it as a-b.
+    """
+    i = st["pairs"].index((a, b)) if (a, b) in st["pairs"] else st["pairs"].index((b, a))
+    d = st["mean"][a] - st["mean"][b]
+    return (d, float(st["p_paired_fdr"][i]), float(st["p_unpaired_fdr"][i]))
+
+
+def p_safe(o):
+    """numpy/tuple -> json"""
+    if isinstance(o, dict):
+        return {str(k): p_safe(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [p_safe(v) for v in o]
+    if hasattr(o, "tolist"):
+        return o.tolist()
+    return o
 
 
 if __name__ == "__main__":
