@@ -67,17 +67,43 @@ def fracridge_torch(
 def fracridge_from_svd(
     U: torch.Tensor, s: torch.Tensor, Vh: torch.Tensor, Y: torch.Tensor, fracs: torch.Tensor
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """As `fracridge_torch`, but with the SVD of X supplied.
+    """As `fracridge_torch`, but with the SVD of X supplied. -> coef (p, f, b), alphas (f, b).
 
     The design matrix is the same for every target chunk within a CV fold, so the SVD is
     hoisted out of the chunk loop. (The library recomputes it on every call.)
+    """
+    coef_rot, alphas = fracridge_rotated(U, s, Y, fracs)   # (b, f, k)
+    coef = coef_rot @ Vh                                   # (b, f, p)
+    return coef.permute(2, 1, 0).contiguous(), alphas
+
+
+def fracridge_rotated(
+    U: torch.Tensor, s: torch.Tensor, Y: torch.Tensor, fracs: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """The coefficients in the ROTATED (SVD) space: -> coef_rot (b, f, k), alphas (f, b).
+
+    Exists for the WIDE case (p >> n), e.g. the decoding model, where the design matrix is
+    the brain: (9,485 images x 67,696 vertices). There, forming `Vh` costs 5.1 GB in float64
+    and the economy SVD itself is pathological -- five fold-SVDs OOM'd a 40 GB A100.
+
+    But `Vh` is never actually needed. Predictions can be written entirely in the rotated
+    space, because
+        X_test @ coef = X_test @ Vᵀ @ coef_rot = (X_test @ Xᵀ @ U / s) @ coef_rot,
+    and the eigendecomposition of the Gram matrix X Xᵀ (n x n) gives U and s directly.
+    See `ridge._svd_wide`.
     """
     ols = (U.T @ Y) / s[:, None]                          # (k, b)
     ols = torch.where((s < TOL)[:, None], torch.zeros_like(ols), ols)
 
     alphagrid = _alpha_grid(s)                            # (A,)
     s2 = s ** 2                                           # (k,)
-    sclg_sq = (s2 / (s2 + alphagrid[:, None])) ** 2       # (A, k)
+    # The shrinkage factor s²/(s²+α). A singular value of EXACTLY zero (which the Gram path
+    # produces -- mean-centring costs one degree of freedom, so rank = n-1) would make this
+    # 0/0 = NaN at α = 0. The ridge coefficient for a null direction is zero regardless, so
+    # force the factor to zero there rather than propagating NaN.
+    den = s2 + alphagrid[:, None]
+    sclg = torch.where(den > 0, s2 / den.clamp_min(1e-300), torch.zeros_like(den))
+    sclg_sq = sclg ** 2                                   # (A, k)
 
     newlen = torch.sqrt(sclg_sq @ ols ** 2)               # (A, b)
     newlen = newlen / newlen[0:1]                         # alphagrid[0] == 0 -> OLS length
@@ -100,10 +126,11 @@ def fracridge_from_svd(
     t = ((vals - x0) / (x1 - x0).clamp_min(1e-30)).clamp(0.0, 1.0)
     alphas = torch.expm1(y0 + t * (y1 - y0))              # (b, f)
 
-    sc = s2[None, None, :] / (s2[None, None, :] + alphas[:, :, None])   # (b, f, k)
+    den2 = s2[None, None, :] + alphas[:, :, None]
+    sc = torch.where(den2 > 0, s2[None, None, :] / den2.clamp_min(1e-300),
+                     torch.zeros_like(den2))                             # (b, f, k)
     coef_rot = sc * ols.T[:, None, :]                                    # (b, f, k)
-    coef = coef_rot @ Vh                                                 # (b, f, p)
-    return coef.permute(2, 1, 0).contiguous(), alphas.T.contiguous()
+    return coef_rot, alphas.T.contiguous()
 
 
 def predict(X: torch.Tensor, coef: torch.Tensor) -> torch.Tensor:

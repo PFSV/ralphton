@@ -287,3 +287,34 @@ def test_category_compounds_take_priority_over_vocabulary():
     i_comp = body.index("CATEGORY_COMPOUNDS")
     i_vocab = body.index("if w in vecs")
     assert i_comp < i_vocab, "CATEGORY_COMPOUNDS must be checked BEFORE the vocabulary"
+
+
+def test_wide_gram_path_matches_library():
+    """The decoding model's design matrix is the BRAIN: (9,485 images x 67,696 vertices).
+    An economy SVD of that is pathological -- it sat at 0% GPU and five fold-SVDs OOM'd a
+    40 GB A100 (Vh alone is 5.1 GB in float64). ridge.py therefore takes a Gram-matrix path
+    when p > n, which never forms Vh.
+
+    That path must be the SAME computation, not an approximation. It also exposes a trap the
+    narrow path never hits: mean-centring makes one singular value EXACTLY zero, so the
+    shrinkage factor s^2/(s^2+alpha) becomes 0/0 = NaN at alpha=0 and silently poisons every
+    prediction. Pin both.
+    """
+    from fracridge import FracRidgeRegressor, FracRidgeRegressorCV
+
+    from src.revision.ridge import FRACS, fit_predict, select_frac
+
+    rng = np.random.default_rng(0)
+    n, p = 120, 400  # p > n -> the wide path
+    X = rng.normal(size=(n, p))
+    Y = X @ rng.normal(size=(p, 20)) + rng.normal(size=(n, 20)) * 2.0
+    rows = np.arange(n)
+
+    mine, _ = select_frac(X, Y, rows, chunk=7)
+    ref = FracRidgeRegressorCV(jit=True, fit_intercept=True).fit(X, Y, frac_grid=FRACS)
+    assert mine == pytest.approx(float(ref.best_frac_))
+
+    pred = fit_predict(X, Y, rows, X[:6], mine, chunk=7)
+    assert np.isfinite(pred).all(), "wide path produced NaN (the 0/0 shrinkage trap)"
+    ref_pred = FracRidgeRegressor(fracs=mine, fit_intercept=True).fit(X, Y).predict(X[:6])
+    assert np.allclose(pred, ref_pred, atol=1e-4)

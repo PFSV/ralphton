@@ -54,7 +54,7 @@ from sklearn.model_selection import KFold
 
 from . import config as C
 from . import nsd_data
-from .fracridge_gpu import fracridge_from_svd
+from .fracridge_gpu import TOL, fracridge_from_svd, fracridge_rotated
 
 FRACS = np.linspace(C.RIDGE_FRAC_MIN, C.RIDGE_FRAC_MAX, C.RIDGE_N_FRACS)
 CHUNK = 4096  # targets per GPU batch
@@ -98,6 +98,33 @@ def _block(Y, a: int, b: int) -> np.ndarray:
     return np.asarray(Y[:, a:b], dtype=np.float64)
 
 
+def _svd_wide(Xc: torch.Tensor):
+    """U, s for a WIDE centred design matrix (p >> n), via the Gram matrix. No Vh.
+
+    The decoding model's design matrix is the BRAIN: (9,485 images x 67,696 vertices). An
+    economy SVD of that is pathological -- `torch.linalg.svd` sat at 0% GPU for minutes and
+    five fold-SVDs OOM'd a 40 GB A100 (Vh alone is 5.1 GB in float64).
+
+    But for p >> n, X Xᵀ is only n x n, and its eigendecomposition gives exactly the U and s
+    we need:  X = U diag(s) Vᵀ  =>  X Xᵀ = U diag(s²) Uᵀ.
+    Vh is never formed; predictions go through `_project_wide` instead.
+    """
+    G = Xc @ Xc.T                                   # (n, n)
+    w, U = torch.linalg.eigh(G)                     # ascending eigenvalues
+    w = w.flip(0).clamp_min(0.0)                    # -> descending
+    U = U.flip(1)
+    return U, torch.sqrt(w)
+
+
+def _project_wide(X_new_c: torch.Tensor, Xc: torch.Tensor, U: torch.Tensor, s: torch.Tensor):
+    """W = X_new @ Vᵀ, computed without ever forming V. -> (n_new, k)
+
+    V = Xᵀ U diag(1/s), so  X_new @ Vᵀ = (X_new Xᵀ) U / s.
+    """
+    W = (X_new_c @ Xc.T) @ U                        # (n_new, k)
+    return W / torch.where(s > TOL, s, torch.ones_like(s))[None, :]
+
+
 def select_frac(
     X: np.ndarray, Y, rows: np.ndarray, chunk: int = CHUNK
 ) -> tuple[float, np.ndarray]:
@@ -119,14 +146,26 @@ def select_frac(
     n_valid = 0
     n_t = Y.shape[1]
 
+    wide = X.shape[1] > X.shape[0]  # decoding: the design matrix is the brain
+
     folds = list(kf.split(rows))
-    svds, Xvas = [], []
+    Us, Ss, Ws = [], [], []
     for tr, va in folds:
         Xtr = _dev(X[rows[tr]])
         Xva = _dev(X[rows[va]])
         xm = Xtr.mean(0, keepdim=True)
-        svds.append(torch.linalg.svd(Xtr - xm, full_matrices=False))
-        Xvas.append(Xva - xm)
+        Xtr_c, Xva_c = Xtr - xm, Xva - xm
+        if wide:
+            U, s = _svd_wide(Xtr_c)
+            Ws.append(_project_wide(Xva_c, Xtr_c, U, s))   # (n_val, k) -- Vh never formed
+            Us.append(U)
+            Ss.append(s)
+        else:
+            svd = torch.linalg.svd(Xtr_c, full_matrices=False)
+            Us.append(svd.U)
+            Ss.append(svd.S)
+            Ws.append((Xva_c, svd.Vh))
+        del Xtr, Xva, Xtr_c, Xva_c
 
     for a in range(0, n_t, chunk):
         b = min(a + chunk, n_t)
@@ -134,19 +173,25 @@ def select_frac(
         valid = np.isfinite(Yblock).all(axis=0)
         n_valid += int(valid.sum())
 
-        for (tr, va), svd, Xva_c in zip(folds, svds, Xvas):
+        for (tr, va), U, s, w in zip(folds, Us, Ss, Ws):
             Ytr = _dev(Yblock[rows[tr]])
             Yva = _dev(Yblock[rows[va]])
             ym = Ytr.mean(0, keepdim=True)
 
-            coef, _ = fracridge_from_svd(svd.U, svd.S, svd.Vh, Ytr - ym, fracs)  # (p,f,t)
-            pred = torch.einsum("np,pfb->nfb", Xva_c, coef) + ym[:, None, :]
+            if wide:
+                coef_rot, _ = fracridge_rotated(U, s, Ytr - ym, fracs)      # (t,f,k)
+                pred = torch.einsum("nk,bfk->nfb", w, coef_rot) + ym[:, None, :]
+            else:
+                Xva_c, Vh = w
+                coef, _ = fracridge_from_svd(U, s, Vh, Ytr - ym, fracs)     # (p,f,t)
+                pred = torch.einsum("np,pfb->nfb", Xva_c, coef) + ym[:, None, :]
+                del coef
 
             ss_res = ((Yva[:, None, :] - pred) ** 2).sum(0)           # (f, t)
             ss_tot = ((Yva - Yva.mean(0, keepdim=True)) ** 2).sum(0)  # (t,)
             r2 = 1.0 - ss_res / ss_tot.clamp_min(1e-12)
             total += torch.nan_to_num(r2, nan=0.0, posinf=0.0, neginf=0.0).sum(1)
-            del coef, pred
+            del pred
 
     mean_r2 = (total / (n_valid * C.RIDGE_CV_FOLDS)).cpu().numpy()
     return float(FRACS[int(np.argmax(mean_r2))]), mean_r2
@@ -156,12 +201,19 @@ def fit_predict(
     X: np.ndarray, Y, rows: np.ndarray, X_test: np.ndarray, frac: float, chunk: int = CHUNK
 ) -> np.ndarray:
     """Refit at the chosen fraction on `rows` and predict `X_test`. -> (n_test, n_targets)"""
+    wide = X.shape[1] > X.shape[0]
     Xtr = _dev(X[rows])
     Xte = _dev(X_test)
     xm = Xtr.mean(0, keepdim=True)
-    svd = torch.linalg.svd(Xtr - xm, full_matrices=False)
-    Xte_c = Xte - xm
+    Xtr_c, Xte_c = Xtr - xm, Xte - xm
     fracs = _dev(np.array([frac]))
+
+    if wide:
+        U, s = _svd_wide(Xtr_c)
+        W = _project_wide(Xte_c, Xtr_c, U, s)
+    else:
+        svd = torch.linalg.svd(Xtr_c, full_matrices=False)
+        U, s, Vh = svd.U, svd.S, svd.Vh
 
     n_t = Y.shape[1]
     out = np.zeros((X_test.shape[0], n_t), dtype=np.float32)
@@ -169,10 +221,15 @@ def fit_predict(
         b = min(a + chunk, n_t)
         Ytr = _dev(_block(Y, a, b)[rows])
         ym = Ytr.mean(0, keepdim=True)
-        coef, _ = fracridge_from_svd(svd.U, svd.S, svd.Vh, Ytr - ym, fracs)
-        pred = torch.einsum("np,pfb->nfb", Xte_c, coef)[:, 0, :] + ym
+        if wide:
+            coef_rot, _ = fracridge_rotated(U, s, Ytr - ym, fracs)
+            pred = torch.einsum("nk,bfk->nfb", W, coef_rot)[:, 0, :] + ym
+        else:
+            coef, _ = fracridge_from_svd(U, s, Vh, Ytr - ym, fracs)
+            pred = torch.einsum("np,pfb->nfb", Xte_c, coef)[:, 0, :] + ym
+            del coef
         out[:, a:b] = pred.float().cpu().numpy()
-        del coef, pred
+        del pred
     return out
 
 
