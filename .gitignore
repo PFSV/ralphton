@@ -15,3 +15,6 @@ laion_data/.laion_fmri/
 laion_data/code/visuo_llm/
 laion_data/code/blt_mpnet/
 laion_data/revision_llm_brain/
+
+# vendored wheels — 128 MB, regenerable with pip download; kept on disk, not in git
+laion_data/code/*.whl
