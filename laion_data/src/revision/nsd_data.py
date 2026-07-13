@@ -211,9 +211,17 @@ def _load_session_zscored(subj: str, sess: int) -> np.ndarray:
 def build_betas(subj: str, keep_raw: bool = False) -> Path:
     """Full M1 pipeline for one subject. Returns the path to the saved artifact.
 
-    Memory: we accumulate a running sum per (vertex, condition) rather than concatenating
-    all ~30,000 trials, which would need ~40 GB. Since every kept condition has exactly 3
-    repeats, a sum/3 is identical to the release's `np.nanmean` over the 3 repeats.
+    Memory: we accumulate a running sum per (condition, vertex) rather than concatenating
+    all ~30,000 trials, which would need ~40 GB.
+
+    The average is a true `np.nanmean` over the repeats, matching the release
+    (`average_over_conditions`, nsd_get_data_light.py:117). This is NOT the same as sum/3:
+    a vertex whose within-session s.d. is zero z-scores to NaN for that session, so a
+    condition can have 1 or 2 valid repeats rather than 3. Dividing the sum by a fixed 3
+    turns such a (condition, vertex) into NaN, which then propagates to the whole vertex
+    when downstream code drops NaN columns -- silently removing 10-350 vertices per subject,
+    ASYMMETRICALLY across subjects, from the very vertex set the cross-subject t-tests run
+    on. We therefore track a per-(condition, vertex) valid count and divide by it.
     """
     BETAS_DIR.mkdir(parents=True, exist_ok=True)
     out = BETAS_DIR / f"{subj}_betas_z_avg_fsaverage.npy"
@@ -223,11 +231,12 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
 
     trial_conditions, keep = get_conditions_3rep(subj)
     n_keep = len(keep)
-    # map 73k id -> column index in the output
+    # map 73k id -> row index in the output
     col_of = -np.ones(trial_conditions.max() + 1, dtype=np.int64)
     col_of[keep] = np.arange(n_keep)
 
     acc = np.zeros((n_keep, C.N_VERTICES_FSAVERAGE), dtype=np.float32)
+    valid_cnt = np.zeros((n_keep, C.N_VERTICES_FSAVERAGE), dtype=np.uint8)
     cnt = np.zeros(n_keep, dtype=np.int32)
 
     n_sess = C.N_SESSIONS[subj]
@@ -241,6 +250,11 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
         rows = rows[valid]
         z = z[valid]
 
+        # NaN-aware accumulation: treat NaN as "absent" and count how many valid repeats
+        # each (condition, vertex) actually received.
+        finite = np.isfinite(z)
+        z = np.where(finite, z, 0.0)
+
         # Scatter-add z's trials into `acc` at `rows`. A condition can recur within a
         # session, so this is an accumulation, not an assignment -- but `np.add.at` is
         # ~50x slower than a slice-add. Instead: sort by row, sum duplicate groups with
@@ -248,16 +262,25 @@ def build_betas(subj: str, keep_raw: bool = False) -> Path:
         order = np.argsort(rows, kind="stable")
         rows_sorted = rows[order]
         uniq, starts, counts = np.unique(rows_sorted, return_index=True, return_counts=True)
-        summed = np.add.reduceat(z[order], starts, axis=0)
-        acc[uniq] += summed
+        acc[uniq] += np.add.reduceat(z[order], starts, axis=0)
+        valid_cnt[uniq] += np.add.reduceat(finite[order].astype(np.uint8), starts, axis=0)
         cnt[uniq] += counts.astype(np.int32)
-        del z, summed
+        del z, finite
 
     assert (cnt == C.N_REPEATS).all(), (
         f"{subj}: expected every kept condition to have exactly {C.N_REPEATS} repeats, "
         f"got counts {np.unique(cnt)}"
     )
-    acc /= C.N_REPEATS
+
+    # np.nanmean semantics: divide by the number of VALID repeats; 0 valid -> NaN.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        acc /= valid_cnt
+    acc[valid_cnt == 0] = np.nan
+    n_partial = int(((valid_cnt > 0) & (valid_cnt < C.N_REPEATS)).sum())
+    n_empty = int((valid_cnt == 0).sum())
+    print(f"[M1] {subj}: {n_partial} (condition, vertex) cells had <3 valid repeats "
+          f"(recovered by nanmean); {n_empty} had none (NaN)", flush=True)
+    del valid_cnt
 
     np.save(out, acc.astype(np.float16))  # (n_images_3x, n_vertices)
     np.save(cond_out, keep)

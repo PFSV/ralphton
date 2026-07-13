@@ -197,7 +197,7 @@ def test_shared_frac_matches_gridsearchcv():
     X = rng.normal(size=(300, 40))
     Y = X @ rng.normal(size=(40, 60)) + rng.normal(size=(300, 60)) * 3.0
 
-    mine, _ = select_frac(X, Y, chunk=17)  # chunk < n_targets, to exercise chunking
+    mine, _ = select_frac(X, Y, np.arange(len(X)), chunk=17)  # chunk < n_targets
     ref = FracRidgeRegressorCV(jit=True, fit_intercept=True).fit(X, Y, frac_grid=FRACS)
     assert mine == pytest.approx(float(ref.best_frac_))
 
@@ -217,3 +217,73 @@ def test_sessions_are_750_trials_and_row_ordered():
         df = df[df["SESSION"] <= C.N_SESSIONS[subj]]
         assert df["SESSION"].is_monotonic_increasing
         assert set(df.groupby("SESSION").size().unique()) == {750}
+
+
+def test_gpu_fracridge_matches_library():
+    """The GPU solver must be the SAME computation as `fracridge`, not an approximation.
+
+    We replaced the library because its main loop is one Python iteration per target and
+    could not finish 327,684 vertices. Equivalence is therefore load-bearing for every
+    encoding number, and must be pinned.
+    """
+    import torch
+    from fracridge import fracridge as fr_ref
+
+    from src.revision.fracridge_gpu import fracridge_torch
+    from src.revision.ridge import DEVICE, FRACS
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(400, 60))
+    Y = X @ rng.normal(size=(60, 300)) + rng.normal(size=(400, 300)) * 2.0
+    X -= X.mean(0)
+    Y -= Y.mean(0)
+
+    c_ref, _ = fr_ref(X, Y, fracs=FRACS)
+    c_gpu, _ = fracridge_torch(
+        torch.as_tensor(X, device=DEVICE, dtype=torch.float64),
+        torch.as_tensor(Y, device=DEVICE, dtype=torch.float64),
+        torch.as_tensor(FRACS, device=DEVICE, dtype=torch.float64),
+    )
+    assert np.allclose(c_ref, c_gpu.cpu().numpy(), atol=1e-8, rtol=1e-6)
+
+
+def test_ridge_is_float64():
+    """float32 returns NaN for 100% of targets: the mean-centred MPNet design matrix has
+    condition number ~3.5e19, so ols = (U^T y)/s divides by a 6e-19 singular value. This
+    silently produced an all-NaN encoding map and a frac of FRACS[0]. Pin the dtype."""
+    import torch
+
+    from src.revision.ridge import DTYPE
+
+    assert DTYPE == torch.float64
+
+
+def test_experiment_drivers_import_and_match_ridge_api():
+    """A signature change to the ridge silently broke two experiment drivers while the test
+    suite stayed green. Import every driver and check it calls the CURRENT ridge API."""
+    import importlib
+    import inspect
+
+    from src.revision import ridge
+
+    sig_sel = inspect.signature(ridge.select_frac)
+    sig_fit = inspect.signature(ridge.fit_predict)
+    assert list(sig_sel.parameters)[:3] == ["X", "Y", "rows"]
+    assert list(sig_fit.parameters)[:5] == ["X", "Y", "rows", "X_test", "frac"]
+
+    for mod in ("experiments.fig1_encoding", "experiments.fig2a_contrasts",
+                "experiments.fig2b_decoding"):
+        importlib.import_module(mod)  # must not raise
+
+
+def test_category_compounds_take_priority_over_vocabulary():
+    """`baseball-bat` IS in the fastText/GloVe vocabularies, so a lookup that checks the
+    vocabulary first never applies the release's mean(baseball, bat) override. The compound
+    table must win."""
+    import re as _re
+
+    src = (C.ROOT / "src" / "revision" / "wordvec.py").read_text()
+    body = src[src.index("def lookup"):src.index("# ---- embed ----")]
+    i_comp = body.index("CATEGORY_COMPOUNDS")
+    i_vocab = body.index("if w in vecs")
+    assert i_comp < i_vocab, "CATEGORY_COMPOUNDS must be checked BEFORE the vocabulary"

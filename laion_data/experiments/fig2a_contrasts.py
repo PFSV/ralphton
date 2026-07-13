@@ -77,21 +77,19 @@ def main() -> None:
 
     preds: dict[str, dict[str, np.ndarray]] = {k: {} for k in SENTENCES}
     for subj in C.SUBJECTS:
-        betas = roi.load_betas(subj)
+        # fp16 memmap: never materialise the full float32 beta matrix (see ridge.py)
+        betas = np.load(
+            C.DERIV / "betas" / f"{subj}_betas_z_avg_fsaverage.npy", mmap_mode="r"
+        )
         _, keep = nsd_data.get_conditions_3rep(subj)
         tr, _ = ridge.train_test_split_515(subj)
-        good = ~np.isnan(betas).any(axis=0)
-        Y, X = betas[:, good], emb[keep]
-        del betas
+        X = emb[keep]
 
-        frac, _ = ridge.select_frac(X[tr], Y[tr])
+        frac, _ = ridge.select_frac(X, betas, tr)
         for cat, e in cat_emb.items():
-            p = ridge.fit_predict(X[tr], Y[tr], e, frac)[0]
-            full = np.full(C.N_VERTICES_FSAVERAGE, np.nan, dtype=np.float32)
-            full[good] = p
-            preds[cat][subj] = full
+            preds[cat][subj] = ridge.fit_predict(X, betas, tr, e, frac)[0]
         print(f"[Fig2a] {subj}: frac={frac:.4f}", flush=True)
-        del Y
+        del betas
 
     out = {}
     for a, b in CONTRASTS:

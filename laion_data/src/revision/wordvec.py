@@ -40,11 +40,19 @@ Three caveats that remain, and that we log rather than paper over:
    or "is" (verbs). The `allwords` route has **no fallback** in the release and would
    produce a NaN; we log any such image instead of emitting NaN.
 
-Category-word specials (`word_lists.py:3-17`): three COCO categories have no single
-fastText token and are built as the MEAN of two words --
+Category-word specials (`word_lists.py:3-17`): three COCO categories are built as the MEAN
+of two words --
   baseball-bat -> mean(baseball, bat); baseball-glove -> mean(baseball, glove);
   tennis-racket -> mean(tennis, racket).
 SOURCE: get_nsd_category_embeddings_simple.py:78-89.
+
+NOTE -- a bug we shipped and then fixed. `baseball-bat` IS present in both
+`crawl-300d-2M.vec` and `glove.840B.300d.txt`. An earlier `lookup()` checked the vocabulary
+BEFORE the compound table, so the override never fired for it and that category silently got
+a different vector from the release's. The release branches on the category NAME and
+unconditionally takes the mean of the parts; the compound table must therefore be consulted
+first. (An earlier version of this docstring claimed these words have "no single fastText
+token" -- that was simply false.)
 """
 
 from __future__ import annotations
@@ -151,12 +159,18 @@ def build(kind: str, route: str, force: bool = False) -> Path:
     dim = len(next(iter(vecs.values())))
 
     def lookup(w: str) -> np.ndarray | None:
-        if w in vecs:
-            return vecs[w]
-        if w in CATEGORY_COMPOUNDS:  # mean(baseball, bat), etc.
+        # The compound table MUST be consulted first. `baseball-bat` IS present in both
+        # crawl-300d-2M.vec and glove.840B.300d.txt, so checking the vocabulary first meant
+        # the override never fired and that category got a different embedding from the
+        # release's. The release branches on the category NAME and unconditionally uses
+        # mean(baseball, bat) -- see word_lists.py:12-14 and
+        # get_nsd_category_embeddings_simple.py:78-89.
+        if w in CATEGORY_COMPOUNDS:
             parts = [vecs[p] for p in CATEGORY_COMPOUNDS[w] if p in vecs]
             if parts:
                 return np.mean(parts, axis=0)
+        if w in vecs:
+            return vecs[w]
         return None
 
     # ---- embed ----

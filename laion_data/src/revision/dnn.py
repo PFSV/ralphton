@@ -102,26 +102,48 @@ def prereadout_model(net, hparams: dict):
     return tf.keras.Model(inputs=net.inputs, outputs=pooled)
 
 
-def preprocess(images: np.ndarray, size: int, crop: str = "center", seed: int = 0) -> np.ndarray:
+def preprocess(
+    images: np.ndarray, size: int, crop: str = "center", offset: int = 0, seed: int = 0
+) -> np.ndarray:
     """uint8 (n, H, W, 3) -> float32 (n, size, size, 3) in [-1, 1].
 
     crop="center": the largest square crop (the stimuli are already square) -- deterministic,
                    and what the paper describes.
-    crop="random": the released behaviour -- a random square crop of random size, at least
-                   1/3 of the image area (tf_dataset_helper_functions.py:38-45).
+    crop="random": the released behaviour -- a random square crop of random SIZE at a random
+                   LOCATION, the side at least sqrt(1/3) of the image
+                   (tf_dataset_helper_functions.py:38-45).
+
+    `offset` is the index of `images[0]` in the full stimulus set. It is required: both the
+    crop size and the crop location are keyed on the GLOBAL image index, so that
+      (a) the whole run is reproducible, and
+      (b) every model and every seed sees the SAME crop of a given image.
+    (b) matters more than it looks. The Fig. 4d comparison (C16) is supposed to be matched
+    between the LLM-trained and category-trained arms; if each arm drew its own crops, the
+    contrast would be confounded by preprocessing rather than by the training objective.
+
+    A bug we shipped and then fixed: an earlier version seeded only the crop SIZE (via
+    `tf.random.Generator.from_seed`) and left the crop LOCATION to `tf.image.random_crop`,
+    which draws from TensorFlow's UNSEEDED global RNG. Two identical calls returned different
+    tensors. Our claim to have made the released behaviour reproducible was therefore false.
+    We now use `tf.image.stateless_random_crop`, whose seed is explicit.
     """
     import tensorflow as tf
 
     x = tf.convert_to_tensor(images)
     if crop == "random":
-        rng = tf.random.Generator.from_seed(seed)
-        h = tf.cast(tf.shape(x)[1], tf.float32)
-        lo = tf.math.ceil(tf.sqrt(h * h * 0.33))
+        h = float(images.shape[1])
+        lo = int(np.ceil(np.sqrt(h * h * 0.33)))
         out = []
         for i in range(images.shape[0]):
-            side = tf.cast(rng.uniform([], lo, h), tf.int32)
-            out.append(tf.image.resize(tf.image.random_crop(x[i], [side, side, 3]),
-                                       [size, size], antialias=True))
+            gid = offset + i                      # global image index -> stable per image
+            s2 = tf.constant([seed, gid], dtype=tf.int32)
+            side = int(
+                tf.random.stateless_uniform([], seed=s2, minval=lo, maxval=int(h),
+                                            dtype=tf.int32)
+            )
+            crop_i = tf.image.stateless_random_crop(x[i], [side, side, 3], seed=s2)
+            out.append(tf.image.resize(tf.cast(crop_i, tf.float32), [size, size],
+                                       antialias=True))
         x = tf.stack(out)
     else:
         x = tf.image.resize(tf.cast(x, tf.float32), [size, size], antialias=True)
@@ -130,8 +152,14 @@ def preprocess(images: np.ndarray, size: int, crop: str = "center", seed: int = 
     return x.numpy().astype(np.float32)
 
 
-def extract(model: str, images: np.ndarray, crop: str = "center", batch: int = 128) -> np.ndarray:
-    """-> (n_images, 512) float32 pre-readout activations."""
+def extract(
+    model: str, images: np.ndarray, crop: str = "center", batch: int = 128, offset: int = 0
+) -> np.ndarray:
+    """-> (n_images, 512) float32 pre-readout activations.
+
+    `offset` is the index of images[0] in the full stimulus set; it keys the crop RNG so the
+    result is reproducible and identical across models and seeds.
+    """
     hp = load_hparams(model)
     net = build_model(model, hp)
     act = prereadout_model(net, hp)
@@ -139,7 +167,7 @@ def extract(model: str, images: np.ndarray, crop: str = "center", batch: int = 1
     out = np.zeros((len(images), C.RCNN_PREREADOUT_DIM), dtype=np.float32)
     for a in range(0, len(images), batch):
         b = min(a + batch, len(images))
-        x = preprocess(images[a:b], hp["image_size"], crop=crop)
+        x = preprocess(images[a:b], hp["image_size"], crop=crop, offset=offset + a)
         out[a:b] = act.predict(x, verbose=0)
     assert out.shape[1] == C.RCNN_PREREADOUT_DIM == 512, (
         f"expected the 512-d pre-readout, got {out.shape[1]} -- X6: you are probably "

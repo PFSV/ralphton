@@ -76,18 +76,23 @@ def main() -> None:
     examples = {}
 
     for subj in C.SUBJECTS:
-        betas = roi.load_betas(subj)
+        betas = np.load(
+            C.DERIV / "betas" / f"{subj}_betas_z_avg_fsaverage.npy", mmap_mode="r"
+        )
         _, keep = nsd_data.get_conditions_3rep(subj)
         tr, te = ridge.train_test_split_515(subj)
 
-        X = betas[:, vis]
+        # Decoding is the one place the design matrix is the BRAIN. It is restricted to the
+        # 'streams' visual ROIs (nsd_decode_llm.py:99-107), which is ~40k vertices -- small
+        # enough to hold in float32, unlike the whole-brain encoding direction.
+        X = np.asarray(betas[:, vis], dtype=np.float32)
+        del betas
         good = ~np.isnan(X).any(axis=0)
         X = X[:, good]
-        del betas
         Y = emb[keep]
 
-        frac, _ = ridge.select_frac(X[tr], Y[tr])
-        pred = ridge.fit_predict(X[tr], Y[tr], X[te], frac)   # (515, 768)
+        frac, _ = ridge.select_frac(X, Y, tr)
+        pred = ridge.fit_predict(X, Y, tr, X[te], frac)   # (515, 768)
 
         # per-image correlation between predicted and true embedding
         P = pred - pred.mean(1, keepdims=True)

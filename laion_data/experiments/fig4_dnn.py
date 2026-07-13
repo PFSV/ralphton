@@ -53,7 +53,9 @@ def activations(arm: str, seed: int, crop: str, imgs) -> np.ndarray:
     a = np.zeros((73000, C.RCNN_PREREADOUT_DIM), dtype=np.float32)
     for lo in range(0, 73000, 2000):
         hi = min(lo + 2000, 73000)
-        a[lo:hi] = dnn.extract(model, np.asarray(imgs[lo:hi]), crop=crop)
+        # offset=lo keys the crop RNG on the GLOBAL image index, so every model and every
+        # seed sees the same crop of a given image (required for the matched Fig. 4d contrast)
+        a[lo:hi] = dnn.extract(model, np.asarray(imgs[lo:hi]), crop=crop, offset=lo)
     np.save(out, a)
     return a
 
